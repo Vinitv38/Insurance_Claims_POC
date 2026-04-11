@@ -5,19 +5,14 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  FileSearch,
-  Brain,
   SlidersHorizontal,
-  Users,
   BarChart3,
   Shield,
-  Activity,
 } from "lucide-react";
 
 const navigation = [
   { name: "Command Center", href: "/", icon: LayoutDashboard },
   { name: "Configuration", href: "/configurator", icon: SlidersHorizontal },
-  { name: "Skill Routing", href: "/routing", icon: Users },
   { name: "Reports", href: "/reports", icon: BarChart3 },
 ];
 
@@ -58,55 +53,6 @@ export default function Sidebar() {
             </Link>
           );
         })}
-
-        <div className="pt-4">
-          <p className="px-3 mb-2 text-[10px] font-semibold text-white/40 tracking-widest uppercase">Active Cases</p>
-          <Link
-            href="/case/case-001"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-              pathname === "/case/case-001"
-                ? "bg-green-500/15 text-green-300 border border-green-400/20"
-                : "text-white/70 hover:text-white hover:bg-white/10"
-            )}
-          >
-            <FileSearch className="w-4 h-4" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">Pendelton (Happy Path)</p>
-              <p className="text-[10px] text-white/40">Score: 15 — Auto-Approved</p>
-            </div>
-          </Link>
-          <Link
-            href="/adjuster/case-001"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-              pathname === "/adjuster/case-001"
-                ? "bg-blue-500/15 text-blue-300 border border-blue-400/20"
-                : "text-white/70 hover:text-white hover:bg-white/10"
-            )}
-          >
-            <Brain className="w-4 h-4" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">Pendelton Decision</p>
-              <p className="text-[10px] text-white/40">Source vs. Summary</p>
-            </div>
-          </Link>
-          <Link
-            href="/case/case-002"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-              pathname === "/case/case-002"
-                ? "bg-red-500/15 text-red-300 border border-red-400/20"
-                : "text-white/70 hover:text-white hover:bg-white/10"
-            )}
-          >
-            <Activity className="w-4 h-4" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">Hargrove (Edge Case)</p>
-              <p className="text-[10px] text-white/40">Score: 98 — Escalated</p>
-            </div>
-          </Link>
-        </div>
       </nav>
 
       {/* Footer */}
@@ -115,7 +61,7 @@ export default function Sidebar() {
           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse-glow" />
           <span className="text-[10px] text-white/50">AI Engine: Online</span>
         </div>
-        <p className="text-[10px] text-white/30 mt-1">v2.4.1 — Logic Apps Connected</p>
+        <p className="text-[10px] text-white/30 mt-1">v2.4.1 \u2014 Logic Apps Connected</p>
       </div>
     </aside>
   );

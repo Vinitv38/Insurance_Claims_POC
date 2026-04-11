@@ -6,8 +6,10 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   SlidersHorizontal, AlertTriangle, Save, Plus, Trash2, Power, PowerOff,
-  CheckCircle2, XCircle, ChevronRight
+  CheckCircle2, XCircle, ChevronRight, Users, Edit3, ArrowRight, BarChart3
 } from "lucide-react";
+
+type ConfigTab = "weights" | "routing";
 
 export default function ConfiguratorPage() {
   const vectorWeights = useClaimsStore((s) => s.vectorWeights);
@@ -16,10 +18,15 @@ export default function ConfiguratorPage() {
   const updateFatalOverride = useClaimsStore((s) => s.updateFatalOverride);
   const removeFatalOverride = useClaimsStore((s) => s.removeFatalOverride);
   const addFatalOverride = useClaimsStore((s) => s.addFatalOverride);
+  const skillSets = useClaimsStore((s) => s.skillSets);
+  const updateSkillSet = useClaimsStore((s) => s.updateSkillSet);
+  const cases = useClaimsStore((s) => s.cases);
 
+  const [activeTab, setActiveTab] = useState<ConfigTab>("weights");
   const [localWeights, setLocalWeights] = useState(vectorWeights);
   const [published, setPublished] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const sum = localWeights.clinical + localWeights.documentation + localWeights.discrepancy + localWeights.behavioral;
   const isValid = sum === 100;
@@ -48,6 +55,10 @@ export default function ConfiguratorPage() {
     });
   };
 
+  const getRoutedCases = (minScore: number, maxScore: number) => {
+    return cases.filter((c) => c.complexityScore >= minScore && c.complexityScore <= maxScore);
+  };
+
   const vectors = [
     { key: "clinical" as const, label: "Clinical", subscript: "V_c", color: "bg-blue-500", textColor: "text-blue-400" },
     { key: "documentation" as const, label: "Documentation", subscript: "V_d", color: "bg-amber-500", textColor: "text-amber-400" },
@@ -60,239 +71,439 @@ export default function ConfiguratorPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-acme-teal">Actuarial Rules Configurator</h1>
-          <p className="text-sm text-gray-500 mt-1">Self-serve administration — configure scoring weights, fatal overrides, and routing logic</p>
+          <h1 className="text-2xl font-bold text-acme-teal">Configuration</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage scoring weights, fatal overrides, and skill routing</p>
         </div>
         <div className="flex items-center gap-2">
-          {showSaveConfirm && (
-            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-xs text-green-400">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Weights saved
-            </motion.div>
+          {activeTab === "weights" && (
+            <>
+              {showSaveConfirm && (
+                <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200 text-xs text-green-600">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Weights saved
+                </motion.div>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={!isValid}
+                className={cn(
+                  "flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-colors",
+                  isValid ? "bg-acme-orange text-white hover:bg-acme-orange/90" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                )}
+              >
+                <Save className="w-3.5 h-3.5" /> Save Configuration
+              </button>
+            </>
           )}
-          <button
-            onClick={handleSave}
-            disabled={!isValid}
-            className={cn(
-              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-colors",
-              isValid ? "bg-acme-orange text-white hover:bg-acme-orange/90" : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            )}
-          >
-            <Save className="w-3.5 h-3.5" /> Save Configuration
-          </button>
+          {activeTab === "routing" && (
+            <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-acme-orange text-white text-xs font-medium hover:bg-acme-orange/90 transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Add Skill Set
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        {/* Vector Weight Sliders */}
-        <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
-          <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-acme-orange" />
-            <h2 className="text-sm font-semibold text-acme-teal">Risk Vector Weights</h2>
-            <span className={cn(
-              "ml-auto text-xs font-bold px-2 py-0.5 rounded",
-              isValid ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
-            )}>
-              Sum: {sum}%
-            </span>
-          </div>
-          <div className="p-5 space-y-6">
-            {vectors.map((v) => (
-              <div key={v.key} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={cn("w-3 h-3 rounded", v.color)} />
-                    <span className="text-sm font-medium text-gray-700">{v.label}</span>
-                    <span className="text-[10px] text-gray-500 font-mono">({v.subscript})</span>
-                  </div>
-                  <span className={cn("text-sm font-bold tabular-nums", v.textColor)}>{localWeights[v.key]}%</span>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={localWeights[v.key]}
-                  onChange={(e) => handleSliderChange(v.key, parseInt(e.target.value))}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-200 accent-acme-orange"
-                  style={{ accentColor: v.color.includes("blue") ? "#3B82F6" : v.color.includes("amber") ? "#F59E0B" : v.color.includes("orange") ? "#E8792B" : "#A855F7" }}
-                />
-                <div className="flex justify-between text-[10px] text-gray-500">
-                  <span>0%</span>
-                  <span>50%</span>
-                  <span>100%</span>
-                </div>
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-1 border-b border-acme-border">
+        <button
+          onClick={() => setActiveTab("weights")}
+          className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px", activeTab === "weights" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+        >
+          <SlidersHorizontal className="w-4 h-4" /> Weights & Overrides
+        </button>
+        <button
+          onClick={() => setActiveTab("routing")}
+          className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px", activeTab === "routing" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+        >
+          <Users className="w-4 h-4" /> Skill Routing
+        </button>
+      </div>
+
+      {/* Weights & Overrides Tab */}
+      {activeTab === "weights" && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Vector Weight Sliders */}
+            <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
+              <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-acme-orange" />
+                <h2 className="text-sm font-semibold text-acme-teal">Risk Vector Weights</h2>
+                <span className={cn(
+                  "ml-auto text-xs font-bold px-2 py-0.5 rounded",
+                  isValid ? "bg-green-50 text-green-600 border border-green-200" : "bg-red-50 text-red-500 border border-red-200"
+                )}>
+                  Sum: {sum}%
+                </span>
               </div>
-            ))}
-
-            {/* Validation message */}
-            {!isValid && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20"
-              >
-                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <p className="text-xs text-red-400">
-                  Weights must sum to 100%. Current total: <span className="font-bold">{sum}%</span> ({sum > 100 ? `${sum - 100}% over` : `${100 - sum}% under`})
-                </p>
-              </motion.div>
-            )}
-
-            {/* Weight distribution visualization */}
-            <div className="space-y-2">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Distribution Preview</p>
-              <div className="h-4 rounded-full overflow-hidden flex bg-gray-200">
+              <div className="p-5 space-y-6">
                 {vectors.map((v) => (
+                  <div key={v.key} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={cn("w-3 h-3 rounded", v.color)} />
+                        <span className="text-sm font-medium text-gray-700">{v.label}</span>
+                        <span className="text-[10px] text-gray-500 font-mono">({v.subscript})</span>
+                      </div>
+                      <span className={cn("text-sm font-bold tabular-nums", v.textColor)}>{localWeights[v.key]}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={localWeights[v.key]}
+                      onChange={(e) => handleSliderChange(v.key, parseInt(e.target.value))}
+                      className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-200 accent-acme-orange"
+                      style={{ accentColor: v.color.includes("blue") ? "#3B82F6" : v.color.includes("amber") ? "#F59E0B" : v.color.includes("orange") ? "#E8792B" : "#A855F7" }}
+                    />
+                    <div className="flex justify-between text-[10px] text-gray-500">
+                      <span>0%</span>
+                      <span>50%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+                ))}
+
+                {!isValid && (
                   <motion.div
-                    key={v.key}
-                    className={cn(v.color)}
-                    animate={{ width: `${localWeights[v.key]}%` }}
-                    transition={{ duration: 0.3 }}
-                  />
-                ))}
-              </div>
-              <div className="flex gap-4 flex-wrap">
-                {vectors.map((v) => (
-                  <div key={v.key} className="flex items-center gap-1.5">
-                    <div className={cn("w-2 h-2 rounded", v.color)} />
-                    <span className="text-[10px] text-gray-500">{v.label}: {localWeights[v.key]}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Fatal Override Configurations */}
-        <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
-          <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
-              <h2 className="text-sm font-semibold text-acme-teal">Fatal Override Configurations</h2>
-            </div>
-            <button onClick={handleAddOverride} className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-50 border border-acme-border text-xs text-gray-500 hover:text-gray-900 transition-colors">
-              <Plus className="w-3 h-3" /> Add Rule
-            </button>
-          </div>
-          <div className="p-5 space-y-4">
-            {fatalOverrides.map((override) => (
-              <motion.div
-                key={override.id}
-                layout
-                className={cn(
-                  "rounded-lg border p-4 space-y-3 transition-colors",
-                  override.isActive ? "border-acme-orange/30 bg-orange-50" : "border-acme-border bg-gray-50"
-                )}
-              >
-                {/* Logic builder visualization */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">IF</span>
-                  <select
-                    value={override.condition}
-                    onChange={(e) => updateFatalOverride(override.id, { condition: e.target.value })}
-                    className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:border-acme-orange/50"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200"
                   >
-                    <option>Evidence Discrepancy</option>
-                    <option>Documentation Completeness</option>
-                    <option>OCR Confidence</option>
-                    <option>Behavioral Score</option>
-                    <option>Clinical Vector</option>
-                  </select>
-                  <select
-                    value={override.operator}
-                    onChange={(e) => updateFatalOverride(override.id, { operator: e.target.value })}
-                    className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-gray-700 w-14 focus:outline-none focus:border-acme-orange/50"
-                  >
-                    <option>==</option>
-                    <option>&gt;</option>
-                    <option>&lt;</option>
-                    <option>&gt;=</option>
-                    <option>!=</option>
-                  </select>
-                  <input
-                    value={override.value}
-                    onChange={(e) => updateFatalOverride(override.id, { value: e.target.value })}
-                    className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-acme-orange font-mono w-40 focus:outline-none focus:border-acme-orange/50"
-                    placeholder="Value"
-                  />
-                </div>
-
-                {override.andCondition && (
-                  <div className="flex items-center gap-2 flex-wrap pl-4">
-                    <span className="text-[10px] font-bold text-amber-400 uppercase">AND</span>
-                    <span className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">{override.andCondition}</span>
-                    <span className="text-xs text-gray-600">{override.andOperator}</span>
-                    <span className="text-xs text-acme-orange font-mono bg-gray-50 px-2 py-1 rounded">{override.andValue}</span>
-                  </div>
+                    <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                    <p className="text-xs text-red-500">
+                      Weights must sum to 100%. Current total: <span className="font-bold">{sum}%</span> ({sum > 100 ? `${sum - 100}% over` : `${100 - sum}% under`})
+                    </p>
+                  </motion.div>
                 )}
 
-                <div className="flex items-center gap-2 pl-4">
-                  <span className="text-[10px] font-bold text-green-400 uppercase">THEN</span>
-                  <ChevronRight className="w-3 h-3 text-gray-400" />
-                  <select
-                    value={override.thenAction}
-                    onChange={(e) => updateFatalOverride(override.id, { thenAction: e.target.value })}
-                    className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-green-600 focus:outline-none focus:border-acme-orange/50"
-                  >
-                    <option>Route to Tier 2 Clinical</option>
-                    <option>Hold for Manual Review</option>
-                    <option>Request Re-submission</option>
-                    <option>Route to SIU</option>
-                    <option>Auto-Deny</option>
-                  </select>
+                <div className="space-y-2">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Distribution Preview</p>
+                  <div className="h-4 rounded-full overflow-hidden flex bg-gray-200">
+                    {vectors.map((v) => (
+                      <motion.div
+                        key={v.key}
+                        className={cn(v.color)}
+                        animate={{ width: `${localWeights[v.key]}%` }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-4 flex-wrap">
+                    {vectors.map((v) => (
+                      <div key={v.key} className="flex items-center gap-1.5">
+                        <div className={cn("w-2 h-2 rounded", v.color)} />
+                        <span className="text-[10px] text-gray-500">{v.label}: {localWeights[v.key]}%</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-acme-border/50">
-                  <button
-                    onClick={() => updateFatalOverride(override.id, { isActive: !override.isActive })}
+            {/* Fatal Override Configurations */}
+            <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
+              <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                  <h2 className="text-sm font-semibold text-acme-teal">Fatal Override Configurations</h2>
+                </div>
+                <button onClick={handleAddOverride} className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-50 border border-acme-border text-xs text-gray-500 hover:text-gray-900 transition-colors">
+                  <Plus className="w-3 h-3" /> Add Rule
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                {fatalOverrides.map((override) => (
+                  <motion.div
+                    key={override.id}
+                    layout
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-medium transition-colors",
-                      override.isActive ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"
+                      "rounded-lg border p-4 space-y-3 transition-colors",
+                      override.isActive ? "border-acme-orange/30 bg-orange-50" : "border-acme-border bg-gray-50"
                     )}
                   >
-                    {override.isActive ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
-                    {override.isActive ? "Active" : "Inactive"}
-                  </button>
-                  <button
-                    onClick={() => removeFatalOverride(override.id)}
-                    className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-red-400 hover:bg-red-500/10 transition-colors"
-                  >
-                    <Trash2 className="w-3 h-3" /> Remove
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase">IF</span>
+                      <select
+                        value={override.condition}
+                        onChange={(e) => updateFatalOverride(override.id, { condition: e.target.value })}
+                        className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:border-acme-orange/50"
+                      >
+                        <option>Evidence Discrepancy</option>
+                        <option>Documentation Completeness</option>
+                        <option>OCR Confidence</option>
+                        <option>Behavioral Score</option>
+                        <option>Clinical Vector</option>
+                      </select>
+                      <select
+                        value={override.operator}
+                        onChange={(e) => updateFatalOverride(override.id, { operator: e.target.value })}
+                        className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-gray-700 w-14 focus:outline-none focus:border-acme-orange/50"
+                      >
+                        <option>==</option>
+                        <option>&gt;</option>
+                        <option>&lt;</option>
+                        <option>&gt;=</option>
+                        <option>!=</option>
+                      </select>
+                      <input
+                        value={override.value}
+                        onChange={(e) => updateFatalOverride(override.id, { value: e.target.value })}
+                        className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-acme-orange font-mono w-40 focus:outline-none focus:border-acme-orange/50"
+                        placeholder="Value"
+                      />
+                    </div>
 
-      {/* Publish Toggle */}
-      <div className="rounded-xl border border-acme-border bg-white p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-acme-teal">Publish Rules to Logic Apps Engine</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Deploy current configuration to production scoring engine</p>
+                    {override.andCondition && (
+                      <div className="flex items-center gap-2 flex-wrap pl-4">
+                        <span className="text-[10px] font-bold text-amber-500 uppercase">AND</span>
+                        <span className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">{override.andCondition}</span>
+                        <span className="text-xs text-gray-600">{override.andOperator}</span>
+                        <span className="text-xs text-acme-orange font-mono bg-gray-50 px-2 py-1 rounded">{override.andValue}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 pl-4">
+                      <span className="text-[10px] font-bold text-green-500 uppercase">THEN</span>
+                      <ChevronRight className="w-3 h-3 text-gray-400" />
+                      <select
+                        value={override.thenAction}
+                        onChange={(e) => updateFatalOverride(override.id, { thenAction: e.target.value })}
+                        className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-green-600 focus:outline-none focus:border-acme-orange/50"
+                      >
+                        <option>Route to Tier 2 Clinical</option>
+                        <option>Hold for Manual Review</option>
+                        <option>Request Re-submission</option>
+                        <option>Route to SIU</option>
+                        <option>Auto-Deny</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-acme-border/50">
+                      <button
+                        onClick={() => updateFatalOverride(override.id, { isActive: !override.isActive })}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-medium transition-colors",
+                          override.isActive ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"
+                        )}
+                      >
+                        {override.isActive ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
+                        {override.isActive ? "Active" : "Inactive"}
+                      </button>
+                      <button
+                        onClick={() => removeFatalOverride(override.id)}
+                        className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-red-400 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" /> Remove
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            {published && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-green-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Published successfully
-              </motion.span>
-            )}
-            <button
-              onClick={() => { setPublished(!published); if (!published) setTimeout(() => setPublished(false), 5000); }}
-              className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300",
-                published ? "bg-green-500" : "bg-gray-300"
-              )}
-            >
-              <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300",
-                published ? "translate-x-6" : "translate-x-1"
-              )} />
-            </button>
+
+          {/* Publish Toggle */}
+          <div className="rounded-xl border border-acme-border bg-white p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-acme-teal">Publish Rules to Logic Apps Engine</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Deploy current configuration to production scoring engine</p>
+              </div>
+              <div className="flex items-center gap-4">
+                {published && (
+                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Published successfully
+                  </motion.span>
+                )}
+                <button
+                  onClick={() => { setPublished(!published); if (!published) setTimeout(() => setPublished(false), 5000); }}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300",
+                    published ? "bg-green-500" : "bg-gray-300"
+                  )}
+                >
+                  <span className={cn(
+                    "inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300",
+                    published ? "translate-x-6" : "translate-x-1"
+                  )} />
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      )}
+
+      {/* Skill Routing Tab */}
+      {activeTab === "routing" && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          {/* Score Range Visualization */}
+          <div className="rounded-xl border border-acme-border bg-white p-5">
+            <h3 className="text-xs font-semibold text-acme-teal mb-4 uppercase tracking-wider">Score-to-Skill Routing Map</h3>
+            <div className="relative h-16 rounded-lg overflow-hidden flex">
+              {skillSets.map((skill) => {
+                const width = skill.maxScore - skill.minScore + 1;
+                return (
+                  <motion.div
+                    key={skill.id}
+                    className="relative flex items-center justify-center"
+                    style={{ width: `${width}%`, backgroundColor: skill.color + "20", borderRight: "1px solid #E5E7EB" }}
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="text-center">
+                      <p className="text-[10px] font-bold text-gray-800">{skill.name}</p>
+                      <p className="text-[10px] text-gray-500">{skill.minScore}\u2013{skill.maxScore}</p>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: skill.color }} />
+                  </motion.div>
+                );
+              })}
+            </div>
+            <div className="flex justify-between mt-2">
+              <span className="text-[10px] text-gray-500">0 (Low Risk)</span>
+              <span className="text-[10px] text-gray-500">50 (Moderate)</span>
+              <span className="text-[10px] text-gray-500">100 (Critical)</span>
+            </div>
+          </div>
+
+          {/* Skill Sets Table */}
+          <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
+            <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
+              <Users className="w-4 h-4 text-acme-orange" />
+              <h2 className="text-sm font-semibold text-acme-teal">Skill Sets & Capacity</h2>
+            </div>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-acme-border bg-[#F0F7F8]">
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Skill Set</th>
+                  <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                  <th className="px-5 py-3 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Score Range</th>
+                  <th className="px-5 py-3 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Users</th>
+                  <th className="px-5 py-3 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Capacity Free</th>
+                  <th className="px-5 py-3 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Routed Cases</th>
+                  <th className="px-5 py-3 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {skillSets.map((skill) => {
+                  const routedCases = getRoutedCases(skill.minScore, skill.maxScore);
+                  const isEditing = editingId === skill.id;
+
+                  return (
+                    <motion.tr
+                      key={skill.id}
+                      layout
+                      className="border-b border-acme-border/50 hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-8 rounded" style={{ backgroundColor: skill.color }} />
+                          <span className="text-sm font-medium text-gray-900">{skill.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="text-xs text-gray-500">{skill.description}</span>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        {isEditing ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <input
+                              type="number"
+                              value={skill.minScore}
+                              onChange={(e) => updateSkillSet(skill.id, { minScore: parseInt(e.target.value) || 0 })}
+                              className="w-14 bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-center text-gray-700 focus:outline-none focus:border-acme-orange/50"
+                            />
+                            <ArrowRight className="w-3 h-3 text-gray-400" />
+                            <input
+                              type="number"
+                              value={skill.maxScore}
+                              onChange={(e) => updateSkillSet(skill.id, { maxScore: parseInt(e.target.value) || 0 })}
+                              className="w-14 bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-center text-gray-700 focus:outline-none focus:border-acme-orange/50"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-xs font-mono px-2 py-1 rounded bg-gray-100 text-gray-700">
+                            {skill.minScore} \u2014 {skill.maxScore}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <span className="text-sm font-medium text-gray-900">{skill.userCount}</span>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-16 h-2 rounded-full bg-gray-200 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${skill.capacityFree}%`,
+                                backgroundColor: skill.capacityFree > 50 ? "#22C55E" : skill.capacityFree > 25 ? "#F59E0B" : "#EF4444",
+                              }}
+                            />
+                          </div>
+                          <span className={cn(
+                            "text-xs font-medium",
+                            skill.capacityFree > 50 ? "text-green-600" : skill.capacityFree > 25 ? "text-amber-600" : "text-red-600"
+                          )}>
+                            {skill.capacityFree}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <span className="text-xs font-bold text-acme-orange">{routedCases.length}</span>
+                      </td>
+                      <td className="px-5 py-4 text-center">
+                        <button
+                          onClick={() => setEditingId(isEditing ? null : skill.id)}
+                          className={cn(
+                            "p-1.5 rounded transition-colors",
+                            isEditing ? "bg-orange-50 text-acme-orange" : "text-gray-400 hover:text-gray-900 hover:bg-gray-100"
+                          )}
+                        >
+                          {isEditing ? <Save className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5" />}
+                        </button>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Routing Logic Summary Cards */}
+          <div className="grid grid-cols-4 gap-4">
+            {skillSets.map((skill) => {
+              const routedCases = getRoutedCases(skill.minScore, skill.maxScore);
+              return (
+                <motion.div
+                  key={skill.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-acme-border bg-white p-4"
+                  style={{ borderLeftColor: skill.color, borderLeftWidth: "3px" }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-semibold text-gray-900">{skill.name}</h4>
+                    <BarChart3 className="w-3.5 h-3.5 text-gray-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-[10px] text-gray-500">Active Cases</span>
+                      <span className="text-sm font-bold" style={{ color: skill.color }}>{routedCases.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[10px] text-gray-500">Team Size</span>
+                      <span className="text-xs text-gray-700">{skill.userCount} adjusters</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[10px] text-gray-500">Avg Load</span>
+                      <span className="text-xs text-gray-700">{routedCases.length > 0 ? (routedCases.length / skill.userCount).toFixed(1) : "0"} cases/adj</span>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }
