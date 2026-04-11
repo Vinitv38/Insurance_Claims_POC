@@ -12,7 +12,7 @@ interface ComplexityGaugeProps {
 function getScoreColor(score: number): string {
   if (score <= 30) return "#22C55E";
   if (score <= 60) return "#F59E0B";
-  if (score <= 80) return "#E8792B";
+  if (score <= 80) return "#DF643D";
   return "#EF4444";
 }
 
@@ -46,7 +46,7 @@ export default function ComplexityGauge({ score, size = 220, label }: Complexity
           <path
             d={`M 10 ${size / 2 + 10} A ${radius} ${radius} 0 0 1 ${size - 10} ${size / 2 + 10}`}
             fill="none"
-            stroke="#1E293B"
+            stroke="#E5E7EB"
             strokeWidth="12"
             strokeLinecap="round"
           />
@@ -79,7 +79,7 @@ export default function ComplexityGauge({ score, size = 220, label }: Complexity
             x={size / 2}
             y={size / 2 + 18}
             textAnchor="middle"
-            fill="#64748B"
+            fill="#6B7280"
             fontSize="11"
             fontWeight="600"
             fontFamily="Inter, sans-serif"

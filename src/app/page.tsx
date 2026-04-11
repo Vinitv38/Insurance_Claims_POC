@@ -19,15 +19,15 @@ export default function HomePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Global Triage Command Center</h1>
-          <p className="text-sm text-acme-muted mt-1">AI-powered claims complexity engine — operational overview</p>
+          <h1 className="text-2xl font-bold text-acme-teal">Global Triage Command Center</h1>
+          <p className="text-sm text-gray-500 mt-1">AI-powered claims complexity engine — operational overview</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse-glow" />
-            <span className="text-xs font-medium text-green-400">System Online</span>
+            <span className="text-xs font-medium text-green-700">System Online</span>
           </div>
-          <div className="px-3 py-1.5 rounded-lg bg-acme-slate border border-acme-border text-xs text-acme-muted">
+          <div className="px-3 py-1.5 rounded-lg bg-gray-50 border border-acme-border text-xs text-gray-500">
             Last sync: 2 min ago
           </div>
         </div>

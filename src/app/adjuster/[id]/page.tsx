@@ -36,7 +36,7 @@ export default function AdjusterPage() {
     return (
       <div className="p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p className="text-lg text-slate-400">Case not found</p>
+          <p className="text-lg text-gray-500">Case not found</p>
           <button onClick={() => router.push("/")} className="mt-4 text-acme-orange hover:underline text-sm">Return to Command Center</button>
         </div>
       </div>
@@ -49,19 +49,19 @@ export default function AdjusterPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.push(`/case/${caseId}`)} className="p-2 rounded-lg hover:bg-acme-slate transition-colors">
-            <ArrowLeft className="w-5 h-5 text-slate-400" />
+          <button onClick={() => router.push(`/case/${caseId}`)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-400" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-white">Adjuster Decision Workspace</h1>
-            <p className="text-sm text-acme-muted mt-0.5">{currentCase.claimantName} — {currentCase.policyNumber} — Source vs. AI Summary</p>
+            <h1 className="text-xl font-bold text-acme-teal">Adjuster Decision Workspace</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{currentCase.claimantName} — {currentCase.policyNumber} — Source vs. AI Summary</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-500 transition-colors">
             <ThumbsUp className="w-3.5 h-3.5" /> Approve Claim
           </button>
-          <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-acme-slate border border-acme-border text-xs text-slate-400 hover:text-white transition-colors">
+          <button className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-acme-border text-xs text-gray-500 hover:text-gray-900 transition-colors">
             <RotateCcw className="w-3.5 h-3.5" /> Reinvestigate
           </button>
         </div>
@@ -70,11 +70,11 @@ export default function AdjusterPage() {
       {/* Split Pane */}
       <div className="grid grid-cols-2 gap-6 min-h-[calc(100vh-180px)]">
         {/* Left Pane: AI Decision Summary */}
-        <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden flex flex-col">
+        <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
           <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
             <Brain className="w-4 h-4 text-acme-orange" />
-            <h2 className="text-sm font-semibold text-white">AI Decision Summary</h2>
-            <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20">AUTO-GENERATED</span>
+            <h2 className="text-sm font-semibold text-acme-teal">AI Decision Summary</h2>
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">AUTO-GENERATED</span>
           </div>
 
           <div className="flex-1 overflow-y-auto p-5 space-y-6">
@@ -84,19 +84,19 @@ export default function AdjusterPage() {
                 <Stethoscope className="w-4 h-4 text-acme-orange" />
                 <h3 className="text-xs font-bold text-acme-orange uppercase tracking-wider">Clinical Synopsis</h3>
               </div>
-              <div className="bg-acme-navy/50 rounded-lg p-4 border border-acme-border/50">
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  72-year-old male with recently diagnosed <span className="text-white font-medium">Parkinson&#39;s Disease</span> (Stage 3, Hoehn & Yahr).{" "}
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  72-year-old male with recently diagnosed <span className="text-gray-900 font-medium">Parkinson&#39;s Disease</span> (Stage 3, Hoehn & Yahr).{" "}
                   <button onClick={() => setHighlightedCitation("NEURO-1")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "NEURO-1" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
                     <Bookmark className="w-2.5 h-2.5" /> Ref: NEURO-1
                   </button>{" "}
                   Presenting with moderate-to-severe bilateral tremors significantly impacting Activities of Daily Living:{" "}
-                  <span className="text-white font-medium">Bathing</span> and <span className="text-white font-medium">Dressing</span>.{" "}
+                  <span className="text-gray-900 font-medium">Bathing</span> and <span className="text-gray-900 font-medium">Dressing</span>.{" "}
                   <button onClick={() => setHighlightedCitation("HW-Note-1")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "HW-Note-1" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
                     <Bookmark className="w-2.5 h-2.5" /> Ref: HW-Note-1
                   </button>
                 </p>
-                <p className="text-sm text-slate-300 leading-relaxed mt-2">
+                <p className="text-sm text-gray-600 leading-relaxed mt-2">
                   Patient reports inability to perform fine motor tasks (buttoning shirts, holding razor) and requires assistance with bathing due to fall risk.{" "}
                   <button onClick={() => setHighlightedCitation("HW-Note-2")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "HW-Note-2" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
                     <Bookmark className="w-2.5 h-2.5" /> Ref: HW-Note-2
@@ -119,7 +119,7 @@ export default function AdjusterPage() {
                 {currentCase.riskIndicators?.map((indicator, i) => (
                   <div key={i} className="flex items-start gap-2 py-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-slate-300">{indicator}</p>
+                    <p className="text-sm text-gray-600">{indicator}</p>
                   </div>
                 ))}
               </div>
@@ -132,17 +132,17 @@ export default function AdjusterPage() {
                 <h3 className="text-xs font-bold text-blue-400 uppercase tracking-wider">Recommended Next Steps</h3>
               </div>
               <div className="bg-blue-500/5 rounded-lg p-4 border border-blue-500/10">
-                <p className="text-sm text-slate-300 leading-relaxed font-medium">{currentCase.recommendedAction}</p>
+                <p className="text-sm text-gray-700 leading-relaxed font-medium">{currentCase.recommendedAction}</p>
               </div>
             </div>
 
             {/* AI Confidence */}
-            <div className="bg-acme-navy/50 rounded-lg p-4 border border-acme-border/50">
+            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-acme-muted uppercase tracking-wider font-semibold">AI Confidence Level</span>
-                <span className="text-sm font-bold text-green-400">96.2%</span>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">AI Confidence Level</span>
+                <span className="text-sm font-bold text-green-600">96.2%</span>
               </div>
-              <div className="h-2 rounded-full bg-acme-slate overflow-hidden">
+              <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full"
                   initial={{ width: "0%" }}
@@ -150,28 +150,28 @@ export default function AdjusterPage() {
                   transition={{ duration: 1.5, ease: "easeOut" }}
                 />
               </div>
-              <p className="text-[10px] text-acme-muted mt-2">Based on 4 source documents analyzed. All claims cross-validated against medical records.</p>
+              <p className="text-[10px] text-gray-500 mt-2">Based on 4 source documents analyzed. All claims cross-validated against medical records.</p>
             </div>
           </div>
         </div>
 
         {/* Right Pane: Source Material Viewer */}
-        <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden flex flex-col">
+        <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
           <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-400" />
-              <h2 className="text-sm font-semibold text-white">Source Material Viewer</h2>
+              <FileText className="w-4 h-4 text-blue-500" />
+              <h2 className="text-sm font-semibold text-acme-teal">Source Material Viewer</h2>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => { setActiveSourceTab("handwritten"); setHighlightedCitation(null); }}
-                className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "handwritten" ? "bg-acme-orange/20 text-acme-orange" : "text-slate-400 hover:text-white")}
+                className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "handwritten" ? "bg-orange-50 text-acme-orange" : "text-gray-500 hover:text-gray-900")}
               >
                 Handwritten Note
               </button>
               <button
                 onClick={() => { setActiveSourceTab("neuro"); setHighlightedCitation(null); }}
-                className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "neuro" ? "bg-acme-orange/20 text-acme-orange" : "text-slate-400 hover:text-white")}
+                className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "neuro" ? "bg-orange-50 text-acme-orange" : "text-gray-500 hover:text-gray-900")}
               >
                 Neurologist Report
               </button>
@@ -243,7 +243,7 @@ export default function AdjusterPage() {
                     — Arthur Pendelton
                   </div>
                 </div>
-                <p className="text-[10px] text-acme-muted text-center">Click citation badges on the left to highlight source text</p>
+                <p className="text-[10px] text-gray-500 text-center">Click citation badges on the left to highlight source text</p>
               </div>
             ) : (
               <div className="space-y-3">

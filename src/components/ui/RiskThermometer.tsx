@@ -22,12 +22,12 @@ export default function RiskThermometer({ label, value, subscript }: RiskThermom
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-300">{label}</span>
-          <span className="text-[10px] text-acme-muted font-mono">({subscript})</span>
+          <span className="text-xs font-medium text-gray-700">{label}</span>
+          <span className="text-[10px] text-gray-500 font-mono">({subscript})</span>
         </div>
         <span className={cn(
           "text-xs font-bold tabular-nums",
-          value <= 30 ? "text-green-400" : value <= 60 ? "text-amber-400" : value <= 80 ? "text-acme-orange" : "text-red-400"
+          value <= 30 ? "text-green-600" : value <= 60 ? "text-amber-600" : value <= 80 ? "text-acme-orange" : "text-red-600"
         )}>
           {value}%
         </span>

@@ -15,13 +15,13 @@ interface MetricCardProps {
 }
 
 const colorMap = {
-  orange: { bg: "bg-acme-orange/10", border: "border-acme-orange/20", text: "text-acme-orange", icon: "text-acme-orange" },
-  green: { bg: "bg-green-500/10", border: "border-green-500/20", text: "text-green-400", icon: "text-green-400" },
-  red: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", icon: "text-red-400" },
-  blue: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-400", icon: "text-blue-400" },
-  amber: { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-400", icon: "text-amber-400" },
-  teal: { bg: "bg-teal-500/10", border: "border-teal-500/20", text: "text-teal-400", icon: "text-teal-400" },
-  purple: { bg: "bg-purple-500/10", border: "border-purple-500/20", text: "text-purple-400", icon: "text-purple-400" },
+  orange: { bg: "bg-orange-50", border: "border-orange-200", text: "text-acme-orange", icon: "text-acme-orange" },
+  green: { bg: "bg-green-50", border: "border-green-200", text: "text-green-600", icon: "text-green-600" },
+  red: { bg: "bg-red-50", border: "border-red-200", text: "text-red-600", icon: "text-red-600" },
+  blue: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-600", icon: "text-blue-600" },
+  amber: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-600", icon: "text-amber-600" },
+  teal: { bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", icon: "text-teal-700" },
+  purple: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-600", icon: "text-purple-600" },
 };
 
 export default function MetricCard({ title, value, subtitle, icon: Icon, trend, color = "orange", className }: MetricCardProps) {
@@ -33,18 +33,18 @@ export default function MetricCard({ title, value, subtitle, icon: Icon, trend, 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className={cn(
-        "relative overflow-hidden rounded-xl border bg-acme-dark p-5",
+        "relative overflow-hidden rounded-xl border bg-white p-5",
         colors.border,
         className
       )}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-xs font-medium text-acme-muted uppercase tracking-wider">{title}</p>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{title}</p>
           <p className={cn("text-3xl font-bold mt-1", colors.text)}>{value}</p>
-          {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
           {trend && (
-            <p className={cn("text-xs font-medium mt-2", trend.positive ? "text-green-400" : "text-red-400")}>
+            <p className={cn("text-xs font-medium mt-2", trend.positive ? "text-green-600" : "text-red-600")}>
               {trend.positive ? "+" : ""}{trend.value}
             </p>
           )}

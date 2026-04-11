@@ -60,8 +60,8 @@ export default function ConfiguratorPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Actuarial Rules Configurator</h1>
-          <p className="text-sm text-acme-muted mt-1">Self-serve administration — configure scoring weights, fatal overrides, and routing logic</p>
+          <h1 className="text-2xl font-bold text-acme-teal">Actuarial Rules Configurator</h1>
+          <p className="text-sm text-gray-500 mt-1">Self-serve administration — configure scoring weights, fatal overrides, and routing logic</p>
         </div>
         <div className="flex items-center gap-2">
           {showSaveConfirm && (
@@ -74,7 +74,7 @@ export default function ConfiguratorPage() {
             disabled={!isValid}
             className={cn(
               "flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-colors",
-              isValid ? "bg-acme-orange text-white hover:bg-acme-orange/90" : "bg-acme-slate text-slate-500 cursor-not-allowed"
+              isValid ? "bg-acme-orange text-white hover:bg-acme-orange/90" : "bg-gray-100 text-gray-400 cursor-not-allowed"
             )}
           >
             <Save className="w-3.5 h-3.5" /> Save Configuration
@@ -84,10 +84,10 @@ export default function ConfiguratorPage() {
 
       <div className="grid grid-cols-2 gap-6">
         {/* Vector Weight Sliders */}
-        <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
+        <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-acme-orange" />
-            <h2 className="text-sm font-semibold text-white">Risk Vector Weights</h2>
+            <h2 className="text-sm font-semibold text-acme-teal">Risk Vector Weights</h2>
             <span className={cn(
               "ml-auto text-xs font-bold px-2 py-0.5 rounded",
               isValid ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
@@ -101,8 +101,8 @@ export default function ConfiguratorPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className={cn("w-3 h-3 rounded", v.color)} />
-                    <span className="text-sm font-medium text-slate-300">{v.label}</span>
-                    <span className="text-[10px] text-acme-muted font-mono">({v.subscript})</span>
+                    <span className="text-sm font-medium text-gray-700">{v.label}</span>
+                    <span className="text-[10px] text-gray-500 font-mono">({v.subscript})</span>
                   </div>
                   <span className={cn("text-sm font-bold tabular-nums", v.textColor)}>{localWeights[v.key]}%</span>
                 </div>
@@ -112,10 +112,10 @@ export default function ConfiguratorPage() {
                   max={100}
                   value={localWeights[v.key]}
                   onChange={(e) => handleSliderChange(v.key, parseInt(e.target.value))}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer bg-acme-slate accent-acme-orange"
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-200 accent-acme-orange"
                   style={{ accentColor: v.color.includes("blue") ? "#3B82F6" : v.color.includes("amber") ? "#F59E0B" : v.color.includes("orange") ? "#E8792B" : "#A855F7" }}
                 />
-                <div className="flex justify-between text-[10px] text-acme-muted">
+                <div className="flex justify-between text-[10px] text-gray-500">
                   <span>0%</span>
                   <span>50%</span>
                   <span>100%</span>
@@ -139,8 +139,8 @@ export default function ConfiguratorPage() {
 
             {/* Weight distribution visualization */}
             <div className="space-y-2">
-              <p className="text-[10px] text-acme-muted uppercase tracking-wider font-semibold">Distribution Preview</p>
-              <div className="h-4 rounded-full overflow-hidden flex bg-acme-slate">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Distribution Preview</p>
+              <div className="h-4 rounded-full overflow-hidden flex bg-gray-200">
                 {vectors.map((v) => (
                   <motion.div
                     key={v.key}
@@ -154,7 +154,7 @@ export default function ConfiguratorPage() {
                 {vectors.map((v) => (
                   <div key={v.key} className="flex items-center gap-1.5">
                     <div className={cn("w-2 h-2 rounded", v.color)} />
-                    <span className="text-[10px] text-slate-400">{v.label}: {localWeights[v.key]}%</span>
+                    <span className="text-[10px] text-gray-500">{v.label}: {localWeights[v.key]}%</span>
                   </div>
                 ))}
               </div>
@@ -163,13 +163,13 @@ export default function ConfiguratorPage() {
         </div>
 
         {/* Fatal Override Configurations */}
-        <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
+        <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-400" />
-              <h2 className="text-sm font-semibold text-white">Fatal Override Configurations</h2>
+              <h2 className="text-sm font-semibold text-acme-teal">Fatal Override Configurations</h2>
             </div>
-            <button onClick={handleAddOverride} className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-acme-slate border border-acme-border text-xs text-slate-400 hover:text-white transition-colors">
+            <button onClick={handleAddOverride} className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-50 border border-acme-border text-xs text-gray-500 hover:text-gray-900 transition-colors">
               <Plus className="w-3 h-3" /> Add Rule
             </button>
           </div>
@@ -180,16 +180,16 @@ export default function ConfiguratorPage() {
                 layout
                 className={cn(
                   "rounded-lg border p-4 space-y-3 transition-colors",
-                  override.isActive ? "border-acme-orange/30 bg-acme-orange/5" : "border-acme-border bg-acme-navy/30"
+                  override.isActive ? "border-acme-orange/30 bg-orange-50" : "border-acme-border bg-gray-50"
                 )}
               >
                 {/* Logic builder visualization */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-bold text-acme-muted uppercase">IF</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">IF</span>
                   <select
                     value={override.condition}
                     onChange={(e) => updateFatalOverride(override.id, { condition: e.target.value })}
-                    className="bg-acme-slate border border-acme-border rounded px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-acme-orange/50"
+                    className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-gray-700 focus:outline-none focus:border-acme-orange/50"
                   >
                     <option>Evidence Discrepancy</option>
                     <option>Documentation Completeness</option>
@@ -200,7 +200,7 @@ export default function ConfiguratorPage() {
                   <select
                     value={override.operator}
                     onChange={(e) => updateFatalOverride(override.id, { operator: e.target.value })}
-                    className="bg-acme-slate border border-acme-border rounded px-2 py-1 text-xs text-slate-300 w-14 focus:outline-none focus:border-acme-orange/50"
+                    className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-gray-700 w-14 focus:outline-none focus:border-acme-orange/50"
                   >
                     <option>==</option>
                     <option>&gt;</option>
@@ -211,7 +211,7 @@ export default function ConfiguratorPage() {
                   <input
                     value={override.value}
                     onChange={(e) => updateFatalOverride(override.id, { value: e.target.value })}
-                    className="bg-acme-slate border border-acme-border rounded px-2 py-1 text-xs text-acme-orange font-mono w-40 focus:outline-none focus:border-acme-orange/50"
+                    className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-acme-orange font-mono w-40 focus:outline-none focus:border-acme-orange/50"
                     placeholder="Value"
                   />
                 </div>
@@ -219,19 +219,19 @@ export default function ConfiguratorPage() {
                 {override.andCondition && (
                   <div className="flex items-center gap-2 flex-wrap pl-4">
                     <span className="text-[10px] font-bold text-amber-400 uppercase">AND</span>
-                    <span className="text-xs text-slate-400 bg-acme-slate px-2 py-1 rounded">{override.andCondition}</span>
-                    <span className="text-xs text-slate-400">{override.andOperator}</span>
-                    <span className="text-xs text-acme-orange font-mono bg-acme-slate px-2 py-1 rounded">{override.andValue}</span>
+                    <span className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">{override.andCondition}</span>
+                    <span className="text-xs text-gray-600">{override.andOperator}</span>
+                    <span className="text-xs text-acme-orange font-mono bg-gray-50 px-2 py-1 rounded">{override.andValue}</span>
                   </div>
                 )}
 
                 <div className="flex items-center gap-2 pl-4">
                   <span className="text-[10px] font-bold text-green-400 uppercase">THEN</span>
-                  <ChevronRight className="w-3 h-3 text-acme-muted" />
+                  <ChevronRight className="w-3 h-3 text-gray-400" />
                   <select
                     value={override.thenAction}
                     onChange={(e) => updateFatalOverride(override.id, { thenAction: e.target.value })}
-                    className="bg-acme-slate border border-acme-border rounded px-2 py-1 text-xs text-green-400 focus:outline-none focus:border-acme-orange/50"
+                    className="bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-green-600 focus:outline-none focus:border-acme-orange/50"
                   >
                     <option>Route to Tier 2 Clinical</option>
                     <option>Hold for Manual Review</option>
@@ -246,7 +246,7 @@ export default function ConfiguratorPage() {
                     onClick={() => updateFatalOverride(override.id, { isActive: !override.isActive })}
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1 rounded text-[10px] font-medium transition-colors",
-                      override.isActive ? "bg-green-500/10 text-green-400" : "bg-acme-slate text-slate-500"
+                      override.isActive ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500"
                     )}
                   >
                     {override.isActive ? <Power className="w-3 h-3" /> : <PowerOff className="w-3 h-3" />}
@@ -266,11 +266,11 @@ export default function ConfiguratorPage() {
       </div>
 
       {/* Publish Toggle */}
-      <div className="rounded-xl border border-acme-border bg-acme-dark p-5">
+      <div className="rounded-xl border border-acme-border bg-white p-5">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-white">Publish Rules to Logic Apps Engine</h3>
-            <p className="text-xs text-acme-muted mt-0.5">Deploy current configuration to production scoring engine</p>
+            <h3 className="text-sm font-semibold text-acme-teal">Publish Rules to Logic Apps Engine</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Deploy current configuration to production scoring engine</p>
           </div>
           <div className="flex items-center gap-4">
             {published && (
@@ -282,7 +282,7 @@ export default function ConfiguratorPage() {
               onClick={() => { setPublished(!published); if (!published) setTimeout(() => setPublished(false), 5000); }}
               className={cn(
                 "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300",
-                published ? "bg-green-500" : "bg-acme-slate"
+                published ? "bg-green-500" : "bg-gray-300"
               )}
             >
               <span className={cn(

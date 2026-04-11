@@ -49,16 +49,16 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Management Dashboard</h1>
-          <p className="text-sm text-acme-muted mt-1">Executive reporting & analytics — Q1 2026 performance overview</p>
+          <h1 className="text-2xl font-bold text-acme-teal">Management Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">Executive reporting & analytics — Q1 2026 performance overview</p>
         </div>
         <div className="flex items-center gap-2">
-          <select className="bg-acme-slate border border-acme-border rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-acme-orange/50">
+          <select className="bg-gray-50 border border-acme-border rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-acme-orange/50">
             <option>Q1 2026</option>
             <option>Q4 2025</option>
             <option>Q3 2025</option>
           </select>
-          <select className="bg-acme-slate border border-acme-border rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-acme-orange/50">
+          <select className="bg-gray-50 border border-acme-border rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-acme-orange/50">
             <option>All Products</option>
             <option>Long-Term Care</option>
             <option>Accident &amp; Health</option>
@@ -76,10 +76,10 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-3 gap-6">
         {/* Monthly Claims Trend - Bar Chart */}
-        <div className="col-span-2 rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
+        <div className="col-span-2 rounded-xl border border-acme-border bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-acme-orange" />
-            <h2 className="text-sm font-semibold text-white">Monthly Claims Trend</h2>
+            <h2 className="text-sm font-semibold text-acme-teal">Monthly Claims Trend</h2>
           </div>
           <div className="p-5">
             <div className="flex items-end gap-3 h-48">
@@ -108,32 +108,32 @@ export default function ReportsPage() {
                       title={`Other: ${d.claims - d.stp - d.escalated}`}
                     />
                   </div>
-                  <span className="text-[10px] text-acme-muted">{d.month}</span>
+                  <span className="text-[10px] text-gray-500">{d.month}</span>
                 </div>
               ))}
             </div>
             <div className="flex items-center gap-6 mt-4 pt-3 border-t border-acme-border/50">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded bg-green-500/60" />
-                <span className="text-[10px] text-slate-400">Straight-Through</span>
+                <span className="text-[10px] text-gray-500">Straight-Through</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded bg-red-500/60" />
-                <span className="text-[10px] text-slate-400">Escalated</span>
+                <span className="text-[10px] text-gray-500">Escalated</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded bg-blue-500/60" />
-                <span className="text-[10px] text-slate-400">Standard Review</span>
+                <span className="text-[10px] text-gray-500">Standard Review</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Claims by Product */}
-        <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
+        <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
             <PieChart className="w-4 h-4 text-acme-orange" />
-            <h2 className="text-sm font-semibold text-white">Claims by Product</h2>
+            <h2 className="text-sm font-semibold text-acme-teal">Claims by Product</h2>
           </div>
           <div className="p-5 space-y-4">
             {/* Visual pie representation */}
@@ -171,8 +171,8 @@ export default function ReportsPage() {
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <p className="text-lg font-bold text-white">1,081</p>
-                    <p className="text-[10px] text-acme-muted">Total</p>
+                    <p className="text-lg font-bold text-acme-teal">1,081</p>
+                    <p className="text-[10px] text-gray-500">Total</p>
                   </div>
                 </div>
               </div>
@@ -182,11 +182,11 @@ export default function ReportsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className={cn("w-2.5 h-2.5 rounded", p.color)} />
-                    <span className="text-xs text-slate-300">{p.product}</span>
+                    <span className="text-xs text-gray-700">{p.product}</span>
                   </div>
-                  <span className="text-xs font-medium text-white">{p.claims}</span>
+                  <span className="text-xs font-medium text-gray-900">{p.claims}</span>
                 </div>
-                <div className="h-1.5 rounded-full bg-acme-slate overflow-hidden">
+                <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
                   <motion.div
                     className={cn("h-full rounded-full", p.color)}
                     initial={{ width: "0%" }}
@@ -202,37 +202,37 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-2 gap-6">
         {/* Team Performance */}
-        <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
+        <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
             <Users className="w-4 h-4 text-acme-orange" />
-            <h2 className="text-sm font-semibold text-white">Team Performance</h2>
+            <h2 className="text-sm font-semibold text-acme-teal">Team Performance</h2>
           </div>
           <table className="w-full">
             <thead>
-              <tr className="border-b border-acme-border bg-acme-navy/50">
-                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-acme-muted uppercase tracking-wider">Adjuster</th>
-                <th className="px-5 py-2.5 text-center text-[10px] font-semibold text-acme-muted uppercase tracking-wider">Cases</th>
-                <th className="px-5 py-2.5 text-center text-[10px] font-semibold text-acme-muted uppercase tracking-wider">Avg Time</th>
-                <th className="px-5 py-2.5 text-center text-[10px] font-semibold text-acme-muted uppercase tracking-wider">Satisfaction</th>
+              <tr className="border-b border-acme-border bg-[#F0F7F8]">
+                <th className="px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Adjuster</th>
+                <th className="px-5 py-2.5 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Cases</th>
+                <th className="px-5 py-2.5 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Avg Time</th>
+                <th className="px-5 py-2.5 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Satisfaction</th>
               </tr>
             </thead>
             <tbody>
               {teamPerformance.map((person) => (
                 <tr key={person.name} className="border-b border-acme-border/50">
                   <td className="px-5 py-3">
-                    <p className="text-xs font-medium text-white">{person.name}</p>
-                    <p className="text-[10px] text-acme-muted">{person.role}</p>
+                    <p className="text-xs font-medium text-gray-900">{person.name}</p>
+                    <p className="text-[10px] text-gray-500">{person.role}</p>
                   </td>
                   <td className="px-5 py-3 text-center">
                     <span className="text-xs font-bold text-acme-orange">{person.cases}</span>
                   </td>
                   <td className="px-5 py-3 text-center">
-                    <span className="text-xs text-slate-300">{person.avgTime}</span>
+                    <span className="text-xs text-gray-700">{person.avgTime}</span>
                   </td>
                   <td className="px-5 py-3 text-center">
                     <span className={cn(
                       "text-xs font-medium",
-                      person.satisfaction >= 95 ? "text-green-400" : person.satisfaction >= 90 ? "text-amber-400" : "text-red-400"
+                      person.satisfaction >= 95 ? "text-green-600" : person.satisfaction >= 90 ? "text-amber-600" : "text-red-600"
                     )}>
                       {person.satisfaction}%
                     </span>
@@ -244,10 +244,10 @@ export default function ReportsPage() {
         </div>
 
         {/* Root Cause Analysis */}
-        <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
+        <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-acme-orange" />
-            <h2 className="text-sm font-semibold text-white">Escalation Root Causes</h2>
+            <h2 className="text-sm font-semibold text-acme-teal">Escalation Root Causes</h2>
           </div>
           <div className="p-5 space-y-4">
             {rootCauses.map((cause, i) => (
@@ -259,13 +259,13 @@ export default function ReportsPage() {
                 className="space-y-1.5"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-300">{cause.cause}</span>
+                  <span className="text-xs text-gray-700">{cause.cause}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-acme-muted">{cause.count} cases</span>
-                    <span className="text-xs font-bold text-white">{cause.pct}%</span>
+                    <span className="text-[10px] text-gray-500">{cause.count} cases</span>
+                    <span className="text-xs font-bold text-gray-900">{cause.pct}%</span>
                   </div>
                 </div>
-                <div className="h-2 rounded-full bg-acme-slate overflow-hidden">
+                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
                   <motion.div
                     className={cn("h-full rounded-full", cause.color)}
                     initial={{ width: "0%" }}
