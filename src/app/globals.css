@@ -2,26 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #0B1120;
+  --foreground: #E2E8F0;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0F172A; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* Gauge styling */
+.gauge-container { position: relative; }
+.gauge-bg { stroke: #1E293B; }
+.gauge-fill { transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Glow effects */
+.glow-orange { box-shadow: 0 0 20px rgba(232, 121, 43, 0.3); }
+.glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+.glow-red { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+.glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+
+/* Drop zone glow */
+.drop-zone-active {
+  border-color: #E8792B !important;
+  box-shadow: 0 0 30px rgba(232, 121, 43, 0.4), inset 0 0 30px rgba(232, 121, 43, 0.1);
+}
+
+/* Terminal styling */
+.terminal-log {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Thermometer bars */
+.thermometer-track { background: #1E293B; border-radius: 4px; height: 8px; overflow: hidden; }
+.thermometer-fill { height: 100%; border-radius: 4px; transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Pulsing node */
+@keyframes pulse-node {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+  50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+}
+.pulse-node { animation: pulse-node 2s infinite; }
+
+/* Bounding box animation */
+@keyframes bbox-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.4; }
+}
+.bbox-highlight {
+  animation: bbox-pulse 1.5s ease-in-out infinite;
+  border: 2px solid #E8792B;
+  background: rgba(232, 121, 43, 0.1);
+  border-radius: 2px;
+}
+
+/* Processing spinner */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spin-slow { animation: spin-slow 3s linear infinite; }
+
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  .text-balance { text-wrap: balance; }
 }
