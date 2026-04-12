@@ -11,7 +11,7 @@ import {
   ArrowLeft, Upload, FileText, AlertTriangle, CheckCircle2, Clock,
   Brain, Eye, ChevronRight, RotateCcw, Loader2, History,
   Stethoscope, Shield, FileSearch, Code, FileType,
-  Bookmark, ClipboardList, Download, ExternalLink, Image as ImageIcon,
+  ClipboardList, Download, ExternalLink, Image as ImageIcon,
   FileSpreadsheet, Activity, ZoomIn, ZoomOut
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
@@ -53,14 +53,11 @@ export default function CaseDetailPage() {
   const triggerDocumentDrop = useClaimsStore((s) => s.triggerDocumentDrop);
   const resetDropPhase = useClaimsStore((s) => s.resetDropPhase);
   const setActiveDocument = useClaimsStore((s) => s.setActiveDocument);
-  const highlightedCitation = useClaimsStore((s) => s.highlightedCitation);
-  const setHighlightedCitation = useClaimsStore((s) => s.setHighlightedCitation);
 
   const [isDragOver, setIsDragOver] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
   const [mainTab, setMainTab] = useState<MainTab>("overview");
   const [docViewTab, setDocViewTab] = useState<DocViewTab>("original");
-  const [activeSourceTab, setActiveSourceTab] = useState<"handwritten" | "neuro">("handwritten");
   const [imageZoom, setImageZoom] = useState(100);
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -512,13 +509,11 @@ export default function CaseDetailPage() {
 
   /* Decision Tab - AI Summary + Document Viewer + Complexity Vectors */
   function renderDecisionTab() {
-    const isPendelton = caseId === "case-001";
-
     return (
-      <div className="grid grid-cols-2 gap-6 min-h-[calc(100vh-350px)]">
+      <div className="grid grid-cols-2 gap-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
         {/* Left Pane: AI Decision Summary + Complexity Vectors */}
-        <div className="space-y-4">
-          <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col flex-1">
             <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
               <Brain className="w-4 h-4 text-acme-orange" />
               <h2 className="text-sm font-semibold text-acme-teal">AI Decision Summary</h2>
@@ -534,18 +529,6 @@ export default function CaseDetailPage() {
                 <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
                   <p className="text-sm text-gray-600 leading-relaxed">
                     {caseData.summary}
-                    {isPendelton && (
-                      <>
-                        {" "}
-                        <button onClick={() => setHighlightedCitation("NEURO-1")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "NEURO-1" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
-                          <Bookmark className="w-2.5 h-2.5" /> Ref: NEURO-1
-                        </button>
-                        {" "}
-                        <button onClick={() => setHighlightedCitation("HW-Note-1")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "HW-Note-1" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
-                          <Bookmark className="w-2.5 h-2.5" /> Ref: HW-Note-1
-                        </button>
-                      </>
-                    )}
                   </p>
                 </div>
               </div>
@@ -646,8 +629,8 @@ export default function CaseDetailPage() {
           )}
         </div>
 
-        {/* Right Pane: Document Viewer + Source Material */}
-        <div className="space-y-4">
+        {/* Right Pane: Document List + Document Viewer */}
+        <div className="flex flex-col gap-4">
           {/* Document list for Tab 2 */}
           <div className="rounded-xl border border-acme-border bg-white p-4">
             <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Documents</h3>
@@ -669,20 +652,20 @@ export default function CaseDetailPage() {
             </div>
           </div>
 
-          {/* Document Viewer with 3 tabs */}
-          <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
+          {/* Document Viewer with 3 tabs - expands to fill remaining space */}
+          <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col flex-1">
             <div className="px-4 py-3 border-b border-acme-border flex items-center gap-2">
               <Eye className="w-3.5 h-3.5 text-acme-orange" />
               <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Document Viewer</h3>
             </div>
-            <div className="p-4 min-h-[300px]">
+            <div className="p-4 flex-1 overflow-y-auto">
               <AnimatePresence mode="wait">
                 {activeDoc ? (
-                  <motion.div key={activeDoc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                  <motion.div key={activeDoc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full">
                     {renderDocumentViewer(activeDoc)}
                   </motion.div>
                 ) : (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-[280px] text-gray-400">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center min-h-[400px] h-full text-gray-400">
                     <FileText className="w-8 h-8 mb-2 opacity-30" />
                     <p className="text-xs">Select a document to view</p>
                     <p className="text-[10px] text-gray-400 mt-1">View original, JSON schema, or AI interpretation</p>
@@ -691,104 +674,6 @@ export default function CaseDetailPage() {
               </AnimatePresence>
             </div>
           </div>
-
-          {/* Source Material Viewer for Pendelton */}
-          {isPendelton && (
-            <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
-              <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-500" />
-                  <h2 className="text-sm font-semibold text-acme-teal">Source Material Viewer</h2>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => { setActiveSourceTab("handwritten"); setHighlightedCitation(null); }}
-                    className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "handwritten" ? "bg-orange-50 text-acme-orange" : "text-gray-500 hover:text-gray-900")}
-                  >
-                    Handwritten Note
-                  </button>
-                  <button
-                    onClick={() => { setActiveSourceTab("neuro"); setHighlightedCitation(null); }}
-                    className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "neuro" ? "bg-orange-50 text-acme-orange" : "text-gray-500 hover:text-gray-900")}
-                  >
-                    Neurologist Report
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-5">
-                {activeSourceTab === "handwritten" ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono text-blue-500">Claimant_Personal_Statement_HW_040426.pdf</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-acme-orange/10 text-acme-orange border border-acme-orange/20">OCR: 87%</span>
-                    </div>
-                    <div className="relative bg-[#FFF8E7] rounded-lg p-6 min-h-[300px] border border-amber-200/30">
-                      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #E5D5B5 31px, #E5D5B5 32px)", backgroundPosition: "0 20px" }} />
-                      <div className="absolute top-0 bottom-0 left-16 w-px bg-red-300/40" />
-                      <div className="relative pl-6 space-y-[23px] pt-1" style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive", fontSize: "16px", color: "#1a365d", lineHeight: "32px" }}>
-                        <p>My name is Arthur Pendelton. I am writing</p>
-                        <p>to explain my daily challenges. Since my</p>
-                        <p className="relative">
-                          Parkinson&#39;s diagnosis, my hands shake so
-                          {highlightedCitation === "HW-Note-1" && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -inset-x-2 -inset-y-1 bbox-highlight rounded" />)}
-                        </p>
-                        <p className="relative">
-                          badly I cannot button my shirts or hold
-                          {highlightedCitation === "HW-Note-1" && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -inset-x-2 -inset-y-1 bbox-highlight rounded" />)}
-                        </p>
-                        <p>a razor to shave. My wife Helen helps me</p>
-                        <p className="relative">
-                          bathe because I am afraid of falling in
-                          {highlightedCitation === "HW-Note-2" && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -inset-x-2 -inset-y-1 bbox-highlight rounded" />)}
-                        </p>
-                        <p className="relative">
-                          the tub. I used to be a carpenter {"\u2014"} now
-                          {highlightedCitation === "HW-Note-2" && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -inset-x-2 -inset-y-1 bbox-highlight rounded" />)}
-                        </p>
-                        <p className="relative">
-                          I can barely hold a cup of coffee. I need
-                          {highlightedCitation === "HW-Note-3" && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -inset-x-2 -inset-y-1 bbox-highlight rounded" />)}
-                        </p>
-                        <p className="relative">
-                          help and I am grateful for this policy.
-                          {highlightedCitation === "HW-Note-3" && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute -inset-x-2 -inset-y-1 bbox-highlight rounded" />)}
-                        </p>
-                      </div>
-                      <div className="absolute bottom-6 right-8" style={{ fontFamily: "'Caveat', cursive", fontSize: "20px", color: "#1a365d" }}>
-                        {"\u2014"} Arthur Pendelton
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-gray-500 text-center">Click citation badges on the left to highlight source text</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono text-blue-500">Neurologist_Report_040326.pdf</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-600 border border-green-200">Verified</span>
-                    </div>
-                    <div className="relative bg-white rounded-lg p-6 min-h-[300px] border border-slate-200 text-slate-800 text-sm font-mono leading-relaxed">
-                      <div className="border-b border-slate-300 pb-3 mb-4">
-                        <p className="font-bold text-lg">NEUROLOGY CONSULTATION REPORT</p>
-                        <p className="text-xs text-slate-500 mt-1">Regional Medical Center {"\u2014"} Dept. of Neurology</p>
-                      </div>
-                      <div className="space-y-3">
-                        <div><p className="text-xs text-slate-500 font-semibold">PATIENT:</p><p>Arthur Pendelton {"\u2014"} DOB: 03/12/1954</p></div>
-                        <div className="relative">
-                          <p className="text-xs text-slate-500 font-semibold">DIAGNOSIS:</p>
-                          <p className={cn(highlightedCitation === "NEURO-1" && "bg-orange-100 border border-orange-300 rounded px-1")}>
-                            Parkinson&#39;s Disease, Stage 3 (Hoehn & Yahr Scale)
-                          </p>
-                        </div>
-                        <div><p className="text-xs text-slate-500 font-semibold">TREMOR ASSESSMENT:</p><p>Bilateral, moderate-to-severe resting tremor</p><p>Postural instability: Present</p></div>
-                        <div><p className="text-xs text-slate-500 font-semibold">CURRENT MEDICATION:</p><p>Carbidopa/Levodopa 25/100 TID</p></div>
-                        <div><p className="text-xs text-slate-500 font-semibold">PROGNOSIS:</p><p>Progressive. Current ADL deficits expected to increase.</p></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
