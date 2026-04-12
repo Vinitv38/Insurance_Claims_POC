@@ -12,6 +12,7 @@ import type { ClaimCase } from "@/store/claims-store";
 export default function HomePage() {
   const cases = useClaimsStore((s) => s.cases);
   const addCase = useClaimsStore((s) => s.addCase);
+  const dataSource = useClaimsStore((s) => s.dataSource);
   const [showNewClaim, setShowNewClaim] = useState(false);
   const [formData, setFormData] = useState({
     claimantName: "",
@@ -100,7 +101,7 @@ export default function HomePage() {
             <span className="text-xs font-medium text-green-700">System Online</span>
           </div>
           <div className="px-3 py-1.5 rounded-lg bg-gray-50 border border-acme-border text-xs text-gray-500">
-            Last sync: 2 min ago
+            {dataSource === "supabase" ? "Connected to Supabase" : "Using local data"}
           </div>
         </div>
       </div>
