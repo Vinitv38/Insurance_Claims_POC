@@ -18,6 +18,7 @@ import type { Document } from "@/store/claims-store";
 import { uploadDocumentFile, insertDocument, updateDocumentMarkdown } from "@/lib/supabase-api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 type MainTab = "overview" | "decision";
 type DocViewTab = "original" | "schema" | "interpreted";
@@ -414,8 +415,10 @@ export default function CaseDetailPage() {
           {docViewTab === "interpreted" && (
             <motion.div key="interpreted" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {doc.aiInterpretedMd ? (
-                <div className="prose prose-sm max-w-none max-h-[400px] overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{doc.aiInterpretedMd}</ReactMarkdown>
+                <div className="prose prose-sm max-w-none max-h-[400px] overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                    {doc.aiInterpretedMd.replace(/<!--[\s\S]*?-->/g, "")}
+                  </ReactMarkdown>
                 </div>
               ) : doc.aiFindings && doc.aiFindings.length > 0 ? (
                 <div className="space-y-3">
