@@ -11,7 +11,7 @@ import {
   ArrowLeft, Upload, FileText, AlertTriangle, CheckCircle2, Clock,
   Brain, Eye, ChevronRight, RotateCcw, Loader2, History,
   User, Calendar, Stethoscope, Shield, FileSearch, Code, FileType,
-  Bookmark, ClipboardList
+  Bookmark, ClipboardList, Download, ExternalLink
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
 
@@ -81,12 +81,188 @@ export default function CaseDetailPage() {
   const isHargrove = caseId === "case-002";
   const activeDoc = caseData.documents.find((d) => d.id === activeDocumentId);
 
+  /* Helper: determine file extension from name or URL */
+  function getFileExtension(doc: Document): string {
+    const name = doc.name || "";
+    const ext = name.split(".").pop()?.toLowerCase() || "";
+    return ext;
+  }
+
+  /* Helper: render the original file content based on type */
+  function renderOriginalContent(doc: Document) {
+    const ext = getFileExtension(doc);
+    const hasFile = !!doc.filePath;
+
+    // If we have an actual file URL, render based on type
+    if (hasFile) {
+      if (ext === "pdf") {
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">PDF Document</span>
+              <div className="flex items-center gap-2">
+                <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-acme-orange hover:underline">
+                  <ExternalLink className="w-3 h-3" /> Open
+                </a>
+                <a href={doc.filePath} download className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700">
+                  <Download className="w-3 h-3" /> Download
+                </a>
+              </div>
+            </div>
+            <iframe
+              src={doc.filePath}
+              className="w-full h-[500px] rounded-lg border border-acme-border bg-white"
+              title={doc.name}
+            />
+            {/* Also show extracted text below the PDF */}
+            {doc.extractedText && (
+              <details className="mt-2">
+                <summary className="text-[10px] text-gray-500 cursor-pointer hover:text-gray-700 uppercase tracking-wider font-semibold">
+                  Extracted Text (OCR/AI)
+                </summary>
+                <div className="bg-gray-50 rounded-lg p-3 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed mt-1">
+                  {doc.extractedText.split("\n").map((line, i) => (
+                    <div key={i} className="py-0.5">{line}</div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        );
+      }
+
+      if (ext === "txt") {
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Text Document</span>
+              <div className="flex items-center gap-2">
+                <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-acme-orange hover:underline">
+                  <ExternalLink className="w-3 h-3" /> Open
+                </a>
+                <a href={doc.filePath} download className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700">
+                  <Download className="w-3 h-3" /> Download
+                </a>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed max-h-[500px] overflow-y-auto">
+              {doc.extractedText?.split("\n").map((line, i) => {
+                const isHighlighted = line.includes("MISSING") || line.includes("FAILED") || line.includes("CRITICAL") || line.includes("CONTRADICTION") || line.includes("wheelchair") || line.includes("HANDWRITTEN") || line.includes("OCR") || line.includes("SENTIMENT");
+                return (
+                  <div key={i} className={cn("py-0.5", isHighlighted && "bbox-highlight px-1 my-1")}>
+                    {line}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      if (ext === "json") {
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">JSON Document</span>
+              <div className="flex items-center gap-2">
+                <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-acme-orange hover:underline">
+                  <ExternalLink className="w-3 h-3" /> Open
+                </a>
+                <a href={doc.filePath} download className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700">
+                  <Download className="w-3 h-3" /> Download
+                </a>
+              </div>
+            </div>
+            <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto max-h-[500px]">
+              <pre className="text-[11px] text-cyan-400 font-mono leading-relaxed whitespace-pre-wrap">
+                {doc.extractedText || "Loading JSON content..."}
+              </pre>
+            </div>
+          </div>
+        );
+      }
+
+      if (ext === "csv") {
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">CSV Data</span>
+              <div className="flex items-center gap-2">
+                <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-acme-orange hover:underline">
+                  <ExternalLink className="w-3 h-3" /> Open
+                </a>
+                <a href={doc.filePath} download className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700">
+                  <Download className="w-3 h-3" /> Download
+                </a>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed max-h-[500px] overflow-y-auto">
+              {doc.extractedText?.split("\n").map((line, i) => (
+                <div key={i} className="py-0.5">{line}</div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // Fallback for unknown file types with a file URL
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Document File</span>
+            <div className="flex items-center gap-2">
+              <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-acme-orange hover:underline">
+                <ExternalLink className="w-3 h-3" /> Open
+              </a>
+              <a href={doc.filePath} download className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700">
+                <Download className="w-3 h-3" /> Download
+              </a>
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed">
+            {doc.extractedText?.split("\n").map((line, i) => (
+              <div key={i} className="py-0.5">{line}</div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // No file URL — show extracted text only (legacy behavior)
+    return (
+      <div>
+        <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed relative">
+          {doc.extractedText?.split("\n").map((line, i) => {
+            const isHighlighted = line.includes("MISSING") || line.includes("FAILED") || line.includes("CRITICAL") || line.includes("CONTRADICTION") || line.includes("wheelchair") || line.includes("Page 1 of 4") || line.includes("Left hip") || line.includes("HANDWRITTEN") || line.includes("OCR");
+            return (
+              <div key={i} className={cn("py-0.5", isHighlighted && "bbox-highlight px-1 my-1")}>
+                {line}
+              </div>
+            );
+          })}
+        </div>
+        {doc.pageInfo && (
+          <p className={cn("text-[10px] mt-2", doc.pageInfo.includes("INCOMPLETE") ? "text-red-400" : "text-gray-500")}>
+            {doc.pageInfo}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   /* Helper to render the document viewer with 3 tabs */
   function renderDocumentViewer(doc: Document) {
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-mono text-acme-orange">{doc.name}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-acme-orange">{doc.name}</span>
+            {doc.filePath && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-50 text-green-600 border border-green-200 font-medium">
+                FILE LINKED
+              </span>
+            )}
+          </div>
           <StatusBadge status={doc.status} />
         </div>
         {/* 3-Tab Document Viewer */}
@@ -114,21 +290,7 @@ export default function CaseDetailPage() {
         <AnimatePresence mode="wait">
           {docViewTab === "original" && (
             <motion.div key="original" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed relative">
-                {doc.extractedText?.split("\\n").map((line, i) => {
-                  const isHighlighted = line.includes("MISSING") || line.includes("FAILED") || line.includes("CRITICAL") || line.includes("CONTRADICTION") || line.includes("wheelchair") || line.includes("Page 1 of 4") || line.includes("Left hip") || line.includes("HANDWRITTEN") || line.includes("OCR");
-                  return (
-                    <div key={i} className={cn("py-0.5", isHighlighted && "bbox-highlight px-1 my-1")}>
-                      {line}
-                    </div>
-                  );
-                })}
-              </div>
-              {doc.pageInfo && (
-                <p className={cn("text-[10px] mt-2", doc.pageInfo.includes("INCOMPLETE") ? "text-red-400" : "text-gray-500")}>
-                  {doc.pageInfo}
-                </p>
-              )}
+              {renderOriginalContent(doc)}
             </motion.div>
           )}
 

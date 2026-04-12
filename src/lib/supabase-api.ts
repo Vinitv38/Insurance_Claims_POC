@@ -56,6 +56,7 @@ function dbRowToDocument(row: Record<string, unknown>): Document {
     pageInfo: (row.page_info as string) || undefined,
     flagReason: (row.flag_reason as string) || undefined,
     jsonSchema: (row.json_schema as Record<string, unknown>) || undefined,
+    filePath: (row.file_path as string) || undefined,
   };
 }
 

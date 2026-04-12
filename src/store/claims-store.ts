@@ -24,6 +24,7 @@ export interface Document {
   pageInfo?: string;
   flagReason?: string;
   jsonSchema?: Record<string, unknown>;
+  filePath?: string;
 }
 
 export interface AuditEntry {
