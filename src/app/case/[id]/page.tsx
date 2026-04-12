@@ -44,6 +44,8 @@ export default function CaseDetailPage() {
   const router = useRouter();
   const caseId = params.id as string;
   const cases = useClaimsStore((s) => s.cases);
+  const isLoading = useClaimsStore((s) => s.isLoading);
+  const isInitialized = useClaimsStore((s) => s.isInitialized);
   const semanticLog = useClaimsStore((s) => s.semanticLog);
   const dropPhase = useClaimsStore((s) => s.dropPhase);
   const isProcessing = useClaimsStore((s) => s.isProcessing);
@@ -86,6 +88,16 @@ export default function CaseDetailPage() {
   }, [caseId, triggerDocumentDrop]);
 
   if (!currentCase) {
+    if (isLoading || !isInitialized) {
+      return (
+        <div className="p-6 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-acme-teal mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Loading case data...</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="p-6 flex items-center justify-center min-h-screen">
         <div className="text-center">
