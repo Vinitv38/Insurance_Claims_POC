@@ -15,7 +15,7 @@ import {
   FileSpreadsheet, Activity, ZoomIn, ZoomOut, Plus
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
-import { uploadDocumentFile, insertDocument } from "@/lib/supabase-api";
+import { uploadDocumentFile, insertDocument, updateDocumentMarkdown } from "@/lib/supabase-api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -905,8 +905,9 @@ export default function CaseDetailPage() {
                           try {
                             for (const file of Array.from(files)) {
                               const publicUrl = await uploadDocumentFile(file, caseId);
+                              const docId = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
                               const newDoc: Document = {
-                                id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                                id: docId,
                                 name: file.name,
                                 type: "other",
                                 day: 1,
@@ -915,6 +916,20 @@ export default function CaseDetailPage() {
                                 filePath: publicUrl,
                               };
                               await insertDocument(caseId, newDoc);
+
+                              // Trigger Azure Document Intelligence analysis in background
+                              fetch("/api/analyze-document", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ fileUrl: publicUrl }),
+                              })
+                                .then((res) => res.json())
+                                .then((data) => {
+                                  if (data.markdown) {
+                                    updateDocumentMarkdown(docId, data.markdown).catch(console.error);
+                                  }
+                                })
+                                .catch(console.error);
                             }
                             window.location.reload();
                           } catch (err) {

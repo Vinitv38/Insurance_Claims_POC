@@ -410,6 +410,19 @@ export async function deleteFatalOverrideFromDb(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/* ===== DOCUMENT MARKDOWN UPDATE ===== */
+
+export async function updateDocumentMarkdown(
+  docId: string,
+  markdown: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("documents")
+    .update({ ai_interpreted_md: markdown })
+    .eq("id", docId);
+  if (error) throw error;
+}
+
 /* ===== FILE UPLOAD ===== */
 
 export async function uploadDocumentFile(
