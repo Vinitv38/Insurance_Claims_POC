@@ -10,13 +10,34 @@ import { useCallback, useRef, useState, useEffect } from "react";
 import {
   ArrowLeft, Upload, FileText, AlertTriangle, CheckCircle2, Clock,
   Brain, Eye, ChevronRight, RotateCcw, Loader2, History,
-  User, Calendar, Stethoscope, Shield, FileSearch, Code, FileType,
-  Bookmark, ClipboardList, Download, ExternalLink
+  Stethoscope, Shield, FileSearch, Code, FileType,
+  Bookmark, ClipboardList, Download, ExternalLink, Image as ImageIcon,
+  FileSpreadsheet, Activity, ZoomIn, ZoomOut
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
 
 type MainTab = "overview" | "decision";
 type DocViewTab = "original" | "schema" | "interpreted";
+
+const LIFECYCLE_STAGES = [
+  "Intake",
+  "Triage & Classification",
+  "Investigation",
+  "Assignment & Approval",
+  "Action Execution",
+  "Closure",
+] as const;
+
+function getLifecycleStage(status: string): number {
+  switch (status) {
+    case "pending": return 0;
+    case "in_review": return 2;
+    case "escalated": return 3;
+    case "auto_approved": return 4;
+    case "closed": return 5;
+    default: return 1;
+  }
+}
 
 export default function CaseDetailPage() {
   const params = useParams();
@@ -38,6 +59,7 @@ export default function CaseDetailPage() {
   const [mainTab, setMainTab] = useState<MainTab>("overview");
   const [docViewTab, setDocViewTab] = useState<DocViewTab>("original");
   const [activeSourceTab, setActiveSourceTab] = useState<"handwritten" | "neuro">("handwritten");
+  const [imageZoom, setImageZoom] = useState(100);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   const currentCase = cases.find((c) => c.id === caseId);
@@ -80,6 +102,7 @@ export default function CaseDetailPage() {
   const caseData = currentCase;
   const isHargrove = caseId === "case-002";
   const activeDoc = caseData.documents.find((d) => d.id === activeDocumentId);
+  const currentStage = getLifecycleStage(caseData.status);
 
   /* Helper: determine file extension from name or URL */
   function getFileExtension(doc: Document): string {
@@ -88,13 +111,83 @@ export default function CaseDetailPage() {
     return ext;
   }
 
-  /* Helper: render the original file content based on type */
+  function isImageExtension(ext: string): boolean {
+    return ["png", "jpg", "jpeg", "gif", "webp", "bmp", "svg"].includes(ext);
+  }
+
+  function getDocIcon(doc: Document) {
+    const ext = getFileExtension(doc);
+    if (ext === "pdf") return <FileText className="w-4 h-4 text-red-500" />;
+    if (isImageExtension(ext)) return <ImageIcon className="w-4 h-4 text-purple-500" />;
+    if (ext === "json") return <Code className="w-4 h-4 text-cyan-500" />;
+    if (ext === "csv") return <FileSpreadsheet className="w-4 h-4 text-green-500" />;
+    if (ext === "txt") return <FileType className="w-4 h-4 text-blue-500" />;
+    return <FileText className="w-4 h-4 text-gray-400" />;
+  }
+
+  function getActivityColor(action: string) {
+    if (action.includes("AUTO_APPROVED") || action.includes("CLAIM_CLOSED") || action.includes("APPROVED")) {
+      return { bg: "bg-green-50", border: "border-green-200", text: "text-green-700", dot: "bg-green-500" };
+    }
+    if (action.includes("ESCALAT") || action.includes("FATAL") || action.includes("REJECT") || action.includes("DENIED")) {
+      return { bg: "bg-red-50", border: "border-red-200", text: "text-red-700", dot: "bg-red-500" };
+    }
+    if (action.includes("DISCREPANCY") || action.includes("FLAG") || action.includes("REUPLOAD") || action.includes("REQUEST")) {
+      return { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", dot: "bg-amber-500" };
+    }
+    if (action.includes("AI_SCORING") || action.includes("VECTOR")) {
+      return { bg: "bg-orange-50", border: "border-acme-orange/20", text: "text-acme-orange", dot: "bg-acme-orange" };
+    }
+    return { bg: "bg-white", border: "border-gray-200", text: "text-gray-600", dot: "bg-gray-400" };
+  }
+
   function renderOriginalContent(doc: Document) {
     const ext = getFileExtension(doc);
     const hasFile = !!doc.filePath;
 
-    // If we have an actual file URL, render based on type
     if (hasFile) {
+      if (isImageExtension(ext)) {
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Image Document</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setImageZoom((z) => Math.max(25, z - 25))} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"><ZoomOut className="w-3.5 h-3.5" /></button>
+                <span className="text-[10px] text-gray-500 font-mono w-8 text-center">{imageZoom}%</span>
+                <button onClick={() => setImageZoom((z) => Math.min(200, z + 25))} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"><ZoomIn className="w-3.5 h-3.5" /></button>
+                <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-acme-orange hover:underline">
+                  <ExternalLink className="w-3 h-3" /> Open
+                </a>
+                <a href={doc.filePath} download className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700">
+                  <Download className="w-3 h-3" /> Download
+                </a>
+              </div>
+            </div>
+            <div className="rounded-lg border border-acme-border bg-gray-50 overflow-auto max-h-[500px] flex items-center justify-center p-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={doc.filePath}
+                alt={doc.name}
+                className="rounded transition-transform"
+                style={{ width: `${imageZoom}%`, maxWidth: `${imageZoom * 2}%` }}
+              />
+            </div>
+            {doc.extractedText && (
+              <details className="mt-2">
+                <summary className="text-[10px] text-gray-500 cursor-pointer hover:text-gray-700 uppercase tracking-wider font-semibold">
+                  Extracted Text (OCR/AI)
+                </summary>
+                <div className="bg-gray-50 rounded-lg p-3 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed mt-1">
+                  {doc.extractedText.split("\n").map((line, i) => (
+                    <div key={i} className="py-0.5">{line}</div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        );
+      }
+
       if (ext === "pdf") {
         return (
           <div className="space-y-2">
@@ -405,129 +498,219 @@ export default function CaseDetailPage() {
     );
   }
 
-  /* Decision Summary Tab - Pendelton-specific with citations, generic for others */
-  function renderDecisionSummary() {
+  /* Decision Tab - AI Summary + Document Viewer + Complexity Vectors */
+  function renderDecisionTab() {
     const isPendelton = caseId === "case-001";
 
     return (
-      <div className="grid grid-cols-2 gap-6 min-h-[calc(100vh-280px)]">
-        {/* Left Pane: AI Decision Summary */}
-        <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
-            <Brain className="w-4 h-4 text-acme-orange" />
-            <h2 className="text-sm font-semibold text-acme-teal">AI Decision Summary</h2>
-            <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">AUTO-GENERATED</span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-5 space-y-6">
-            {/* Clinical Synopsis */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Stethoscope className="w-4 h-4 text-acme-orange" />
-                <h3 className="text-xs font-bold text-acme-orange uppercase tracking-wider">Clinical Synopsis</h3>
+      <div className="grid grid-cols-2 gap-6 min-h-[calc(100vh-350px)]">
+        {/* Left Pane: AI Decision Summary + Complexity Vectors */}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
+            <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
+              <Brain className="w-4 h-4 text-acme-orange" />
+              <h2 className="text-sm font-semibold text-acme-teal">AI Decision Summary</h2>
+              <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">AUTO-GENERATED</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              {/* Clinical Synopsis */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Stethoscope className="w-4 h-4 text-acme-orange" />
+                  <h3 className="text-xs font-bold text-acme-orange uppercase tracking-wider">Clinical Synopsis</h3>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {caseData.summary}
+                    {isPendelton && (
+                      <>
+                        {" "}
+                        <button onClick={() => setHighlightedCitation("NEURO-1")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "NEURO-1" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
+                          <Bookmark className="w-2.5 h-2.5" /> Ref: NEURO-1
+                        </button>
+                        {" "}
+                        <button onClick={() => setHighlightedCitation("HW-Note-1")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "HW-Note-1" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
+                          <Bookmark className="w-2.5 h-2.5" /> Ref: HW-Note-1
+                        </button>
+                      </>
+                    )}
+                  </p>
+                </div>
               </div>
+
+              {/* Risk Indicators */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield className="w-4 h-4 text-green-500" />
+                  <h3 className="text-xs font-bold text-green-600 uppercase tracking-wider">Risk Indicators / Red Flags</h3>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  {caseData.riskIndicators?.map((indicator, i) => (
+                    <div key={i} className="flex items-start gap-2 py-1.5">
+                      {indicator.includes("CRITICAL") ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" /> :
+                       indicator.includes("WARNING") ? <Clock className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" /> :
+                       <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />}
+                      <p className="text-sm text-gray-600">{indicator}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recommended Next Steps */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardList className="w-4 h-4 text-blue-500" />
+                  <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider">Recommended Next Steps</h3>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-gray-700 leading-relaxed font-medium">{caseData.recommendedAction}</p>
+                </div>
+              </div>
+
+              {/* AI Confidence */}
               <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {caseData.summary}
-                  {isPendelton && (
-                    <>
-                      {" "}
-                      <button onClick={() => setHighlightedCitation("NEURO-1")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "NEURO-1" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
-                        <Bookmark className="w-2.5 h-2.5" /> Ref: NEURO-1
-                      </button>
-                      {" "}
-                      <button onClick={() => setHighlightedCitation("HW-Note-1")} className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all", highlightedCitation === "HW-Note-1" ? "bg-acme-orange text-white" : "bg-acme-orange/20 text-acme-orange hover:bg-acme-orange/30")}>
-                        <Bookmark className="w-2.5 h-2.5" /> Ref: HW-Note-1
-                      </button>
-                    </>
-                  )}
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">AI Confidence Level</span>
+                  <span className="text-sm font-bold text-green-600">
+                    {caseData.complexityScore <= 30 ? "96.2%" : caseData.complexityScore <= 60 ? "89.4%" : caseData.complexityScore <= 80 ? "82.1%" : "94.8%"}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: caseData.complexityScore <= 30 ? "96.2%" : caseData.complexityScore <= 60 ? "89.4%" : caseData.complexityScore <= 80 ? "82.1%" : "94.8%" }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500 mt-2">Based on {caseData.documents.length} source documents analyzed.</p>
               </div>
-            </div>
-
-            {/* Risk Indicators */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Shield className="w-4 h-4 text-green-500" />
-                <h3 className="text-xs font-bold text-green-600 uppercase tracking-wider">Risk Indicators / Red Flags</h3>
-              </div>
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                {caseData.riskIndicators?.map((indicator, i) => (
-                  <div key={i} className="flex items-start gap-2 py-1.5">
-                    {indicator.includes("CRITICAL") ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" /> :
-                     indicator.includes("WARNING") ? <Clock className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" /> :
-                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />}
-                    <p className="text-sm text-gray-600">{indicator}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recommended Next Steps */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <ClipboardList className="w-4 h-4 text-blue-500" />
-                <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider">Recommended Next Steps</h3>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <p className="text-sm text-gray-700 leading-relaxed font-medium">{caseData.recommendedAction}</p>
-              </div>
-            </div>
-
-            {/* AI Confidence */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">AI Confidence Level</span>
-                <span className="text-sm font-bold text-green-600">
-                                  {caseData.complexityScore <= 30 ? "96.2%" : caseData.complexityScore <= 60 ? "89.4%" : caseData.complexityScore <= 80 ? "82.1%" : "94.8%"}
-                                </span>
-              </div>
-              <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full"
-                  initial={{ width: "0%" }}
-                  animate={{ width: caseData.complexityScore <= 30 ? "96.2%" : caseData.complexityScore <= 60 ? "89.4%" : caseData.complexityScore <= 80 ? "82.1%" : "94.8%" }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                />
-              </div>
-              <p className="text-[10px] text-gray-500 mt-2">Based on {caseData.documents.length} source documents analyzed.</p>
             </div>
           </div>
+
+          {/* Complexity Vectors - moved from Tab 1 */}
+          <div className="rounded-xl border border-acme-border bg-white p-4">
+            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Complexity Vectors</h3>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              <RiskThermometer label="Clinical" value={caseData.vectors.clinical} subscript="V_c" />
+              <RiskThermometer label="Documentation" value={caseData.vectors.documentation} subscript="V_d" />
+              <RiskThermometer label="Discrepancy" value={caseData.vectors.discrepancy} subscript="V_i" />
+              <RiskThermometer label="Behavioral" value={caseData.vectors.behavioral} subscript="V_b" />
+            </div>
+          </div>
+
+          {/* AI Semantic Log for Hargrove - moved from Tab 1 */}
+          {isHargrove && (
+            <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
+              <div className="px-4 py-3 border-b border-acme-border flex items-center gap-2">
+                <Brain className="w-3.5 h-3.5 text-acme-orange" />
+                <h3 className="text-xs font-semibold text-white uppercase tracking-wider">AI Semantic Log</h3>
+                {isProcessing && <Loader2 className="w-3 h-3 text-acme-orange spin-slow ml-auto" />}
+              </div>
+              <div className="terminal-log p-4 max-h-[200px] overflow-y-auto bg-acme-navy/80">
+                {semanticLog.length === 0 ? (
+                  <p className="text-acme-muted text-xs">Drop a file to begin analysis...</p>
+                ) : (
+                  semanticLog.map((entry, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * (i % 10) }} className="py-0.5">
+                      <span className={cn(
+                        "font-bold",
+                        entry.type === "SCAN" && "text-blue-400",
+                        entry.type === "EXTRACT" && "text-cyan-400",
+                        entry.type === "ENGINE" && "text-acme-orange",
+                        entry.type === "RULES" && "text-purple-400",
+                        entry.type === "ALERT" && "text-red-400",
+                        entry.type === "MATCH" && "text-green-400",
+                      )}>
+                        [{entry.type}]
+                      </span>
+                      <span className="text-slate-400 ml-1">{entry.message}</span>
+                    </motion.div>
+                  ))
+                )}
+                <div ref={logEndRef} />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Pane: Source Material Viewer */}
-        <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-blue-500" />
-              <h2 className="text-sm font-semibold text-acme-teal">Source Material Viewer</h2>
+        {/* Right Pane: Document Viewer + Source Material */}
+        <div className="space-y-4">
+          {/* Document list for Tab 2 */}
+          <div className="rounded-xl border border-acme-border bg-white p-4">
+            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Documents</h3>
+            <div className="space-y-1 max-h-[200px] overflow-y-auto">
+              {caseData.documents.map((doc) => (
+                <button
+                  key={doc.id}
+                  onClick={() => { setActiveDocument(doc.id === activeDocumentId ? null : doc.id); setDocViewTab("original"); }}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors text-xs",
+                    doc.id === activeDocumentId ? "bg-orange-50 border border-acme-orange/20" : "hover:bg-gray-50"
+                  )}
+                >
+                  {getDocIcon(doc)}
+                  <span className="flex-1 truncate text-gray-700">{doc.name}</span>
+                  <StatusBadge status={doc.status} />
+                </button>
+              ))}
             </div>
-            {isPendelton && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => { setActiveSourceTab("handwritten"); setHighlightedCitation(null); }}
-                  className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "handwritten" ? "bg-orange-50 text-acme-orange" : "text-gray-500 hover:text-gray-900")}
-                >
-                  Handwritten Note
-                </button>
-                <button
-                  onClick={() => { setActiveSourceTab("neuro"); setHighlightedCitation(null); }}
-                  className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "neuro" ? "bg-orange-50 text-acme-orange" : "text-gray-500 hover:text-gray-900")}
-                >
-                  Neurologist Report
-                </button>
-              </div>
-            )}
           </div>
-          <div className="flex-1 overflow-y-auto p-5">
-            {isPendelton ? (
-              <>
+
+          {/* Document Viewer with 3 tabs */}
+          <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-acme-border flex items-center gap-2">
+              <Eye className="w-3.5 h-3.5 text-acme-orange" />
+              <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Document Viewer</h3>
+            </div>
+            <div className="p-4 min-h-[300px]">
+              <AnimatePresence mode="wait">
+                {activeDoc ? (
+                  <motion.div key={activeDoc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                    {renderDocumentViewer(activeDoc)}
+                  </motion.div>
+                ) : (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-[280px] text-gray-400">
+                    <FileText className="w-8 h-8 mb-2 opacity-30" />
+                    <p className="text-xs">Select a document to view</p>
+                    <p className="text-[10px] text-gray-400 mt-1">View original, JSON schema, or AI interpretation</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Source Material Viewer for Pendelton */}
+          {isPendelton && (
+            <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col">
+              <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                  <h2 className="text-sm font-semibold text-acme-teal">Source Material Viewer</h2>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => { setActiveSourceTab("handwritten"); setHighlightedCitation(null); }}
+                    className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "handwritten" ? "bg-orange-50 text-acme-orange" : "text-gray-500 hover:text-gray-900")}
+                  >
+                    Handwritten Note
+                  </button>
+                  <button
+                    onClick={() => { setActiveSourceTab("neuro"); setHighlightedCitation(null); }}
+                    className={cn("px-3 py-1 rounded text-[10px] font-medium transition-colors", activeSourceTab === "neuro" ? "bg-orange-50 text-acme-orange" : "text-gray-500 hover:text-gray-900")}
+                  >
+                    Neurologist Report
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5">
                 {activeSourceTab === "handwritten" ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono text-blue-500">Claimant_Personal_Statement_HW_040426.pdf</span>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-acme-orange/10 text-acme-orange border border-acme-orange/20">OCR: 87%</span>
                     </div>
-                    <div className="relative bg-[#FFF8E7] rounded-lg p-6 min-h-[450px] border border-amber-200/30">
+                    <div className="relative bg-[#FFF8E7] rounded-lg p-6 min-h-[300px] border border-amber-200/30">
                       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #E5D5B5 31px, #E5D5B5 32px)", backgroundPosition: "0 20px" }} />
                       <div className="absolute top-0 bottom-0 left-16 w-px bg-red-300/40" />
                       <div className="relative pl-6 space-y-[23px] pt-1" style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive", fontSize: "16px", color: "#1a365d", lineHeight: "32px" }}>
@@ -571,7 +754,7 @@ export default function CaseDetailPage() {
                       <span className="text-xs font-mono text-blue-500">Neurologist_Report_040326.pdf</span>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-600 border border-green-200">Verified</span>
                     </div>
-                    <div className="relative bg-white rounded-lg p-6 min-h-[450px] border border-slate-200 text-slate-800 text-sm font-mono leading-relaxed">
+                    <div className="relative bg-white rounded-lg p-6 min-h-[300px] border border-slate-200 text-slate-800 text-sm font-mono leading-relaxed">
                       <div className="border-b border-slate-300 pb-3 mb-4">
                         <p className="font-bold text-lg">NEUROLOGY CONSULTATION REPORT</p>
                         <p className="text-xs text-slate-500 mt-1">Regional Medical Center {"\u2014"} Dept. of Neurology</p>
@@ -591,31 +774,9 @@ export default function CaseDetailPage() {
                     </div>
                   </div>
                 )}
-              </>
-            ) : (
-              /* Generic source material for non-Pendelton cases */
-              <div className="space-y-4">
-                <p className="text-xs text-gray-500 mb-4">Source documents for this case:</p>
-                {caseData.documents.map((doc) => (
-                  <div key={doc.id} className="rounded-lg border border-acme-border p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <FileText className={cn("w-4 h-4", doc.status === "flagged" ? "text-red-400" : "text-green-400")} />
-                        <span className="text-xs font-medium text-gray-700">{doc.name}</span>
-                      </div>
-                      <StatusBadge status={doc.status} />
-                    </div>
-                    <p className="text-[11px] text-gray-500 line-clamp-2">{doc.extractedText?.substring(0, 150)}...</p>
-                    {doc.flagReason && (
-                      <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" /> {doc.flagReason}
-                      </p>
-                    )}
-                  </div>
-                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -679,43 +840,114 @@ export default function CaseDetailPage() {
       <AnimatePresence mode="wait">
         {mainTab === "overview" ? (
           <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-            {/* Case Info Cards */}
-            <div className="grid grid-cols-6 gap-4">
-              <div className="rounded-lg border border-acme-border bg-white p-4">
-                <div className="flex items-center gap-2 mb-2"><User className="w-3.5 h-3.5 text-gray-400" /><span className="text-[10px] text-gray-500 uppercase tracking-wider">Claimant</span></div>
-                <p className="text-sm font-medium text-gray-900">{caseData.claimantName}</p>
-                <p className="text-xs text-gray-500">{caseData.age}yo {"\u2014"} DOB: {caseData.dateOfBirth}</p>
-              </div>
-              <div className="rounded-lg border border-acme-border bg-white p-4">
-                <div className="flex items-center gap-2 mb-2"><Shield className="w-3.5 h-3.5 text-gray-400" /><span className="text-[10px] text-gray-500 uppercase tracking-wider">Policy</span></div>
-                <p className="text-sm font-medium text-gray-900 font-mono">{caseData.policyNumber}</p>
-                <p className="text-xs text-gray-500">{caseData.claimType}</p>
-              </div>
-              <div className="rounded-lg border border-acme-border bg-white p-4">
-                <div className="flex items-center gap-2 mb-2"><Stethoscope className="w-3.5 h-3.5 text-gray-400" /><span className="text-[10px] text-gray-500 uppercase tracking-wider">Diagnosis</span></div>
-                <p className="text-sm font-medium text-gray-900">{caseData.diagnosis}</p>
-              </div>
-              <div className="rounded-lg border border-acme-border bg-white p-4">
-                <div className="flex items-center gap-2 mb-2"><Calendar className="w-3.5 h-3.5 text-gray-400" /><span className="text-[10px] text-gray-500 uppercase tracking-wider">Filing Date</span></div>
-                <p className="text-sm font-medium text-gray-900">{caseData.filingDate}</p>
-                <p className="text-xs text-gray-500">Elim: {caseData.eliminationPeriod || "N/A"}</p>
-              </div>
-              <div className="rounded-lg border border-acme-border bg-white p-4">
-                <div className="flex items-center gap-2 mb-2"><User className="w-3.5 h-3.5 text-gray-400" /><span className="text-[10px] text-gray-500 uppercase tracking-wider">Assigned</span></div>
-                <p className="text-sm font-medium text-gray-900">{caseData.assignedTo}</p>
-                <p className="text-xs text-gray-500">{caseData.assignedGroup}</p>
-              </div>
-              <div className="rounded-lg border border-acme-border bg-white p-4">
-                <div className="flex items-center gap-2 mb-2"><FileSearch className="w-3.5 h-3.5 text-gray-400" /><span className="text-[10px] text-gray-500 uppercase tracking-wider">Documents</span></div>
-                <p className="text-sm font-medium text-gray-900">{caseData.documents.length} files</p>
-                <p className="text-xs text-gray-500">{caseData.documents.filter(d => d.status === "flagged").length} flagged</p>
+
+            {/* ===== LIFECYCLE PROGRESS BAR ===== */}
+            <div className="rounded-xl border border-acme-border bg-white p-4">
+              <div className="flex items-center justify-between">
+                {LIFECYCLE_STAGES.map((stage, i) => {
+                  const isCompleted = i < currentStage;
+                  const isCurrent = i === currentStage;
+                  return (
+                    <div key={stage} className="flex items-center flex-1">
+                      <div className="flex flex-col items-center flex-1">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
+                          isCompleted ? "bg-green-500 border-green-500 text-white" :
+                          isCurrent ? "bg-acme-orange border-acme-orange text-white" :
+                          "bg-gray-100 border-gray-300 text-gray-400"
+                        )}>
+                          {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                        </div>
+                        <span className={cn(
+                          "text-[10px] mt-1.5 text-center font-medium leading-tight max-w-[90px]",
+                          isCompleted ? "text-green-600" :
+                          isCurrent ? "text-acme-orange" :
+                          "text-gray-400"
+                        )}>{stage}</span>
+                      </div>
+                      {i < LIFECYCLE_STAGES.length - 1 && (
+                        <div className={cn(
+                          "h-0.5 flex-1 -mt-4",
+                          isCompleted ? "bg-green-500" :
+                          isCurrent ? "bg-acme-orange" :
+                          "bg-gray-200"
+                        )} />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Main Content */}
+            {/* ===== EXPANDED CASE DETAILS GRID ===== */}
+            <div className="rounded-xl border border-acme-border bg-white p-5">
+              <h3 className="text-xs font-semibold text-acme-teal mb-4 uppercase tracking-wider">Case Details</h3>
+              <div className="grid grid-cols-4 gap-x-6 gap-y-4">
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Claimant</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.claimantName}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Date of Birth</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.dateOfBirth} ({caseData.age}yo)</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Policy Number</span>
+                  <p className="text-sm font-medium text-gray-900 font-mono">{caseData.policyNumber}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Claim Type</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.claimType}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Diagnosis</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.diagnosis}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Filing Date</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.filingDate}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Elimination Period</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.eliminationPeriod || "N/A"}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Status</span>
+                  <StatusBadge status={caseData.status} />
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Assigned To</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.assignedTo}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Assigned Group</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.assignedGroup}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Complexity Score</span>
+                  <span className={cn("text-sm font-bold px-2 py-0.5 rounded", caseData.complexityScore <= 30 ? "bg-green-50 text-green-700" : caseData.complexityScore <= 60 ? "bg-amber-50 text-amber-700" : caseData.complexityScore <= 80 ? "bg-acme-orange/10 text-acme-orange" : "bg-red-50 text-red-700")}>
+                    {caseData.complexityScore}/100
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Last Updated</span>
+                  <p className="text-sm font-medium text-gray-900">{caseData.auditHistory.length > 0 ? new Date(caseData.auditHistory[caseData.auditHistory.length - 1].timestamp).toLocaleDateString() : "N/A"}</p>
+                </div>
+              </div>
+              {/* Case Description */}
+              {caseData.summary && (
+                <div className="mt-4 pt-4 border-t border-acme-border/50">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Case Description</span>
+                  <p className="text-sm text-gray-600 leading-relaxed">{caseData.summary}</p>
+                </div>
+              )}
+            </div>
+
+            {/* ===== MAIN CONTENT: Documents + Recent Activities ===== */}
             <div className="grid grid-cols-12 gap-6">
-              {/* Left Panel: Documents + Upload */}
-              <div className="col-span-4 space-y-4">
+
+              {/* Left: Documents List + Upload Zone */}
+              <div className="col-span-5 space-y-4">
                 {/* Drop Zone for Hargrove demo */}
                 {isHargrove && (
                   <div
@@ -751,163 +983,79 @@ export default function CaseDetailPage() {
                   </div>
                 )}
 
-                {/* Document Timeline */}
+                {/* Document List */}
                 <div className="rounded-xl border border-acme-border bg-white p-4">
-                  <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Document Timeline</h3>
-                  <div className="space-y-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Documents ({caseData.documents.length})</h3>
+                    <span className="text-[10px] text-gray-400">{caseData.documents.filter(d => d.status === "flagged").length} flagged</span>
+                  </div>
+                  <div className="space-y-1">
                     {caseData.documents.map((doc, i) => {
-                      const isActive = doc.id === activeDocumentId;
                       const isIngested = isHargrove ? i < dropPhase : true;
                       return (
-                        <div key={doc.id} className="flex items-start gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className={cn(
-                              "w-3 h-3 rounded-full border-2 flex-shrink-0 transition-all duration-500",
-                              isIngested
-                                ? doc.status === "flagged" ? "bg-red-500 border-red-400 pulse-node" : "bg-green-500 border-green-400 pulse-node"
-                                : "bg-gray-200 border-gray-300"
-                            )} />
-                            {i < caseData.documents.length - 1 && (
-                              <div className={cn("w-0.5 h-8", isIngested ? "bg-acme-border" : "bg-acme-border/30")} />
-                            )}
+                        <div
+                          key={doc.id}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
+                            !isIngested && "opacity-40",
+                            "hover:bg-gray-50"
+                          )}
+                        >
+                          {getDocIcon(doc)}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs font-medium text-gray-700 truncate block">{doc.name}</span>
+                            <span className="text-[10px] text-gray-400">Day {doc.day}</span>
                           </div>
-                          <button
-                            onClick={() => { setActiveDocument(isActive ? null : doc.id); setDocViewTab("original"); }}
-                            className={cn(
-                              "flex-1 text-left rounded-lg p-2 -mt-1 transition-all duration-200",
-                              isActive ? "bg-orange-50 border border-acme-orange/20" : "hover:bg-gray-50",
-                              !isIngested && "opacity-40"
-                            )}
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <FileText className={cn("w-3 h-3 flex-shrink-0", doc.status === "flagged" ? "text-red-400" : "text-green-400")} />
-                              <span className="text-[11px] font-medium text-gray-700 truncate">{doc.name}</span>
-                            </div>
-                            <p className="text-[10px] text-gray-500 mt-0.5">Day {doc.day} {"\u2014"} {doc.status === "flagged" ? doc.flagReason?.split(" ").slice(0, 4).join(" ") + "..." : "Processed"}</p>
-                          </button>
+                          <StatusBadge status={doc.status} />
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Summary + Risk Indicators */}
-                {caseData.summary && (
-                  <div className="rounded-xl border border-acme-border bg-white p-4">
-                    <h3 className="text-xs font-semibold text-acme-teal mb-2 uppercase tracking-wider">Case Summary</h3>
-                    <p className="text-xs text-gray-600 leading-relaxed">{caseData.summary}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Center/Right Panel: Document Viewer + Actions */}
-              <div className="col-span-8 space-y-4">
-                {/* Document Viewer */}
-                <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
-                  <div className="px-4 py-3 border-b border-acme-border flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Eye className="w-3.5 h-3.5 text-acme-orange" />
-                      <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Document Viewer</h3>
-                    </div>
-                  </div>
-                  <div className="p-4 min-h-[300px]">
-                    <AnimatePresence mode="wait">
-                      {activeDoc ? (
-                        <motion.div
-                          key={activeDoc.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                        >
-                          {renderDocumentViewer(activeDoc)}
-                        </motion.div>
-                      ) : (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-[280px] text-gray-400">
-                          <FileText className="w-8 h-8 mb-2 opacity-30" />
-                          <p className="text-xs">Select a document from the timeline</p>
-                          <p className="text-[10px] text-gray-400 mt-1">View original, JSON schema, or AI interpretation</p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-
-                {/* AI Semantic Log for Hargrove */}
-                {isHargrove && (
-                  <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
-                    <div className="px-4 py-3 border-b border-acme-border flex items-center gap-2">
-                      <Brain className="w-3.5 h-3.5 text-acme-orange" />
-                      <h3 className="text-xs font-semibold text-white uppercase tracking-wider">AI Semantic Log</h3>
-                      {isProcessing && <Loader2 className="w-3 h-3 text-acme-orange spin-slow ml-auto" />}
-                    </div>
-                    <div className="terminal-log p-4 max-h-[200px] overflow-y-auto bg-acme-navy/80">
-                      {semanticLog.length === 0 ? (
-                        <p className="text-acme-muted text-xs">Drop a file to begin analysis...</p>
-                      ) : (
-                        semanticLog.map((entry, i) => (
-                          <motion.div key={i} initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * (i % 10) }} className="py-0.5">
-                            <span className={cn(
-                              "font-bold",
-                              entry.type === "SCAN" && "text-blue-400",
-                              entry.type === "EXTRACT" && "text-cyan-400",
-                              entry.type === "ENGINE" && "text-acme-orange",
-                              entry.type === "RULES" && "text-purple-400",
-                              entry.type === "ALERT" && "text-red-400",
-                              entry.type === "MATCH" && "text-green-400",
-                            )}>
-                              [{entry.type}]
-                            </span>
-                            <span className="text-slate-400 ml-1">{entry.message}</span>
-                          </motion.div>
-                        ))
-                      )}
-                      <div ref={logEndRef} />
-                    </div>
-                  </div>
-                )}
-
-                {/* Complexity Score Card (small, not center-focus) */}
-                <div className="rounded-xl border border-acme-border bg-white p-4">
-                  <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Complexity Vectors</h3>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                    <RiskThermometer label="Clinical" value={caseData.vectors.clinical} subscript="V_c" />
-                    <RiskThermometer label="Documentation" value={caseData.vectors.documentation} subscript="V_d" />
-                    <RiskThermometer label="Discrepancy" value={caseData.vectors.discrepancy} subscript="V_i" />
-                    <RiskThermometer label="Behavioral" value={caseData.vectors.behavioral} subscript="V_b" />
-                  </div>
-                </div>
-
-                {/* Risk Indicators */}
-                {caseData.riskIndicators && (
-                  <div className="rounded-xl border border-acme-border bg-white p-4">
-                    <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Risk Indicators</h3>
-                    <div className="space-y-2">
-                      {caseData.riskIndicators.map((indicator, i) => (
-                        <div key={i} className={cn(
-                          "flex items-start gap-2 text-xs p-2 rounded",
-                          indicator.includes("CRITICAL") ? "bg-red-50 text-red-600 border border-red-200" :
-                          indicator.includes("WARNING") ? "bg-amber-50 text-amber-600 border border-amber-200" :
-                          indicator.includes("None") ? "bg-green-50 text-green-600 border border-green-200" :
-                          "text-gray-500 bg-gray-50 border border-gray-200"
-                        )}>
-                          {indicator.includes("CRITICAL") ? <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" /> :
-                           indicator.includes("WARNING") ? <Clock className="w-3 h-3 mt-0.5 flex-shrink-0" /> :
-                           <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0" />}
-                          <span>{indicator}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Action Buttons */}
                 {renderActionButtons()}
+              </div>
+
+              {/* Right: Recent Activities */}
+              <div className="col-span-7 space-y-4">
+                <div className="rounded-xl border border-acme-border bg-white p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Activity className="w-4 h-4 text-acme-orange" />
+                    <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Recent Activities</h3>
+                  </div>
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                    {caseData.auditHistory.slice().reverse().map((entry, i) => {
+                      const colors = getActivityColor(entry.action);
+                      return (
+                        <div key={i} className={cn("flex items-start gap-3 p-3 rounded-lg border transition-colors", colors.bg, colors.border)}>
+                          <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", colors.dot)} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className={cn("text-[10px] font-bold uppercase tracking-wider", colors.text)}>{entry.action}</span>
+                              {entry.scoreChange && (
+                                <span className="text-[10px] font-mono text-acme-orange">
+                                  {entry.scoreChange.from} {"\u2192"} {entry.scoreChange.to}
+                                </span>
+                              )}
+                            </div>
+                            <p className={cn("text-xs", colors.text === "text-gray-600" ? "text-gray-600" : colors.text)}>{entry.detail}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] text-gray-400">{new Date(entry.timestamp).toLocaleString()}</span>
+                              {entry.user && <span className="text-[10px] text-gray-400">{"\u2014"} {entry.user}</span>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
         ) : (
           <motion.div key="decision" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {renderDecisionSummary()}
+            {renderDecisionTab()}
           </motion.div>
         )}
       </AnimatePresence>
