@@ -417,7 +417,7 @@ export default function CaseDetailPage() {
               {doc.aiInterpretedMd ? (
                 <div className="prose prose-sm max-w-none max-h-[400px] overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                    {doc.aiInterpretedMd.replace(/<!--[\s\S]*?-->/g, "")}
+                    {doc.aiInterpretedMd}
                   </ReactMarkdown>
                 </div>
               ) : doc.aiFindings && doc.aiFindings.length > 0 ? (
