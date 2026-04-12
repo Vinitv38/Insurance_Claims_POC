@@ -1,4 +1,16 @@
 import { create } from "zustand";
+import {
+  fetchAllClaims,
+  fetchSkillSets,
+  fetchFatalOverrides,
+  insertClaim,
+  insertSkillSet,
+  updateSkillSetInDb,
+  deleteSkillSetFromDb,
+  insertFatalOverride,
+  updateFatalOverrideInDb,
+  deleteFatalOverrideFromDb,
+} from "@/lib/supabase-api";
 
 export interface Document {
   id: string;
@@ -90,7 +102,11 @@ interface ClaimsState {
   isProcessing: boolean;
   activeDocumentId: string | null;
   highlightedCitation: string | null;
+  isLoading: boolean;
+  isInitialized: boolean;
+  dataSource: "supabase" | "mock";
 
+  initializeFromSupabase: () => Promise<void>;
   selectCase: (id: string) => void;
   setVectorWeights: (weights: { clinical: number; documentation: number; discrepancy: number; behavioral: number }) => void;
   addSkillSet: (skillSet: SkillSet) => void;
@@ -983,32 +999,91 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
   isProcessing: false,
   activeDocumentId: null,
   highlightedCitation: null,
+  isLoading: false,
+  isInitialized: false,
+  dataSource: "mock",
+
+  initializeFromSupabase: async () => {
+    const { isInitialized } = get();
+    if (isInitialized) return;
+
+    set({ isLoading: true });
+    try {
+      const [claims, skillSets, fatalOverrides] = await Promise.all([
+        fetchAllClaims(),
+        fetchSkillSets(),
+        fetchFatalOverrides(),
+      ]);
+
+      if (claims.length > 0) {
+        set({
+          cases: claims,
+          skillSets: skillSets.length > 0 ? skillSets : mockSkillSets,
+          fatalOverrides: fatalOverrides.length > 0 ? fatalOverrides : mockFatalOverrides,
+          dataSource: "supabase",
+          isInitialized: true,
+          isLoading: false,
+        });
+        console.log(`[ClaimsStore] Loaded ${claims.length} claims from Supabase`);
+      } else {
+        set({ isInitialized: true, isLoading: false, dataSource: "mock" });
+        console.log("[ClaimsStore] No data in Supabase, using mock data");
+      }
+    } catch (error) {
+      console.warn("[ClaimsStore] Supabase fetch failed, using mock data:", error);
+      set({ isInitialized: true, isLoading: false, dataSource: "mock" });
+    }
+  },
 
   selectCase: (id) => set({ selectedCaseId: id }),
 
   setVectorWeights: (weights) => set({ vectorWeights: weights }),
 
-  addSkillSet: (skillSet) =>
-    set((state) => ({ skillSets: [...state.skillSets, skillSet] })),
+  addSkillSet: (skillSet) => {
+    set((state) => ({ skillSets: [...state.skillSets, skillSet] }));
+    insertSkillSet(skillSet).catch((err) =>
+      console.warn("[ClaimsStore] Failed to sync skill set to Supabase:", err)
+    );
+  },
 
-  updateSkillSet: (id, updates) =>
+  updateSkillSet: (id, updates) => {
     set((state) => ({
       skillSets: state.skillSets.map((s) => (s.id === id ? { ...s, ...updates } : s)),
-    })),
+    }));
+    updateSkillSetInDb(id, updates).catch((err) =>
+      console.warn("[ClaimsStore] Failed to sync skill set update to Supabase:", err)
+    );
+  },
 
-  removeSkillSet: (id) =>
-    set((state) => ({ skillSets: state.skillSets.filter((s) => s.id !== id) })),
+  removeSkillSet: (id) => {
+    set((state) => ({ skillSets: state.skillSets.filter((s) => s.id !== id) }));
+    deleteSkillSetFromDb(id).catch((err) =>
+      console.warn("[ClaimsStore] Failed to sync skill set deletion to Supabase:", err)
+    );
+  },
 
-  addFatalOverride: (override) =>
-    set((state) => ({ fatalOverrides: [...state.fatalOverrides, override] })),
+  addFatalOverride: (override) => {
+    set((state) => ({ fatalOverrides: [...state.fatalOverrides, override] }));
+    insertFatalOverride(override).catch((err) =>
+      console.warn("[ClaimsStore] Failed to sync fatal override to Supabase:", err)
+    );
+  },
 
-  updateFatalOverride: (id, updates) =>
+  updateFatalOverride: (id, updates) => {
     set((state) => ({
       fatalOverrides: state.fatalOverrides.map((o) => (o.id === id ? { ...o, ...updates } : o)),
-    })),
+    }));
+    updateFatalOverrideInDb(id, updates).catch((err) =>
+      console.warn("[ClaimsStore] Failed to sync fatal override update to Supabase:", err)
+    );
+  },
 
-  removeFatalOverride: (id) =>
-    set((state) => ({ fatalOverrides: state.fatalOverrides.filter((o) => o.id !== id) })),
+  removeFatalOverride: (id) => {
+    set((state) => ({ fatalOverrides: state.fatalOverrides.filter((o) => o.id !== id) }));
+    deleteFatalOverrideFromDb(id).catch((err) =>
+      console.warn("[ClaimsStore] Failed to sync fatal override deletion to Supabase:", err)
+    );
+  },
 
   triggerDocumentDrop: () => {
     const { dropPhase, isProcessing } = get();
@@ -1086,8 +1161,12 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
       cases: mockCases,
     }),
 
-  addCase: (newCase) =>
+  addCase: (newCase) => {
     set((state) => ({
       cases: [newCase, ...state.cases],
-    })),
+    }));
+    insertClaim(newCase).catch((err) =>
+      console.warn("[ClaimsStore] Failed to sync new claim to Supabase:", err)
+    );
+  },
 }));
