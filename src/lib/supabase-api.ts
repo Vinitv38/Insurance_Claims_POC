@@ -57,6 +57,7 @@ function dbRowToDocument(row: Record<string, unknown>): Document {
     flagReason: (row.flag_reason as string) || undefined,
     jsonSchema: (row.json_schema as Record<string, unknown>) || undefined,
     filePath: (row.file_path as string) || undefined,
+    aiInterpretedMd: (row.ai_interpreted_md as string) || undefined,
   };
 }
 
@@ -313,6 +314,8 @@ export async function insertDocument(
     page_info: doc.pageInfo || null,
     flag_reason: doc.flagReason || null,
     json_schema: doc.jsonSchema || null,
+    file_path: doc.filePath || null,
+    ai_interpreted_md: doc.aiInterpretedMd || null,
   });
   if (error) throw error;
 }

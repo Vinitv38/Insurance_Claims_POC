@@ -12,9 +12,12 @@ import {
   Brain, Eye, ChevronRight, RotateCcw, Loader2, History,
   Stethoscope, Shield, FileSearch, Code, FileType,
   ClipboardList, Download, ExternalLink, Image as ImageIcon,
-  FileSpreadsheet, Activity, ZoomIn, ZoomOut
+  FileSpreadsheet, Activity, ZoomIn, ZoomOut, Plus
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
+import { uploadDocumentFile, insertDocument } from "@/lib/supabase-api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type MainTab = "overview" | "decision";
 type DocViewTab = "original" | "schema" | "interpreted";
@@ -59,6 +62,8 @@ export default function CaseDetailPage() {
   const [mainTab, setMainTab] = useState<MainTab>("overview");
   const [docViewTab, setDocViewTab] = useState<DocViewTab>("original");
   const [imageZoom, setImageZoom] = useState(100);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   const currentCase = cases.find((c) => c.id === caseId);
@@ -213,7 +218,7 @@ export default function CaseDetailPage() {
             </div>
             <iframe
               src={doc.filePath}
-              className="w-full h-[500px] rounded-lg border border-acme-border bg-white"
+              className="w-full h-[350px] rounded-lg border border-acme-border bg-white"
               title={doc.name}
             />
             {/* Also show extracted text below the PDF */}
@@ -408,38 +413,40 @@ export default function CaseDetailPage() {
 
           {docViewTab === "interpreted" && (
             <motion.div key="interpreted" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="space-y-3">
-                {doc.aiFindings && doc.aiFindings.length > 0 ? (
-                  <>
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">AI Findings</p>
-                      {doc.aiFindings.map((finding, i) => (
-                        <div key={i} className={cn(
-                          "flex items-start gap-2 text-xs py-1.5 px-2 rounded",
-                          finding.includes("CRITICAL") || finding.includes("CONTRADICTION") || finding.includes("FAILED") || finding.includes("WARNING")
-                            ? "bg-red-50 text-red-600 border border-red-200"
-                            : finding.includes("flag") || finding.includes("Inconsisten")
-                              ? "bg-amber-50 text-amber-600 border border-amber-200"
-                              : "bg-gray-50 text-gray-600 border border-gray-200"
-                        )}>
-                          <ChevronRight className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                          <span>{finding}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {doc.flagReason && (
-                      <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                        <p className="text-[10px] text-red-500 uppercase tracking-wider font-semibold mb-1">Flag Reason</p>
-                        <p className="text-xs text-red-600">{doc.flagReason}</p>
+              {doc.aiInterpretedMd ? (
+                <div className="prose prose-sm max-w-none max-h-[400px] overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{doc.aiInterpretedMd}</ReactMarkdown>
+                </div>
+              ) : doc.aiFindings && doc.aiFindings.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">AI Findings</p>
+                    {doc.aiFindings.map((finding, i) => (
+                      <div key={i} className={cn(
+                        "flex items-start gap-2 text-xs py-1.5 px-2 rounded",
+                        finding.includes("CRITICAL") || finding.includes("CONTRADICTION") || finding.includes("FAILED") || finding.includes("WARNING")
+                          ? "bg-red-50 text-red-600 border border-red-200"
+                          : finding.includes("flag") || finding.includes("Inconsisten")
+                            ? "bg-amber-50 text-amber-600 border border-amber-200"
+                            : "bg-gray-50 text-gray-600 border border-gray-200"
+                      )}>
+                        <ChevronRight className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <span>{finding}</span>
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
-                    <p className="text-xs text-gray-500">No AI interpretations available for this document.</p>
+                    ))}
                   </div>
-                )}
-              </div>
+                  {doc.flagReason && (
+                    <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                      <p className="text-[10px] text-red-500 uppercase tracking-wider font-semibold mb-1">Flag Reason</p>
+                      <p className="text-xs text-red-600">{doc.flagReason}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
+                  <p className="text-xs text-gray-500">No AI interpretations available for this document.</p>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -884,7 +891,50 @@ export default function CaseDetailPage() {
                 <div className="rounded-xl border border-acme-border bg-white p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Documents ({caseData.documents.length})</h3>
-                    <span className="text-[10px] text-gray-400">{caseData.documents.filter(d => d.status === "flagged").length} flagged</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-400">{caseData.documents.filter(d => d.status === "flagged").length} flagged</span>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        multiple
+                        onChange={async (e) => {
+                          const files = e.target.files;
+                          if (!files || files.length === 0) return;
+                          setIsUploading(true);
+                          try {
+                            for (const file of Array.from(files)) {
+                              const publicUrl = await uploadDocumentFile(file, caseId);
+                              const newDoc: Document = {
+                                id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                                name: file.name,
+                                type: "other",
+                                day: 1,
+                                status: "pending",
+                                vectorAffected: "documentation",
+                                filePath: publicUrl,
+                              };
+                              await insertDocument(caseId, newDoc);
+                            }
+                            window.location.reload();
+                          } catch (err) {
+                            console.error("Upload failed:", err);
+                            alert("Upload failed. Check console for details.");
+                          } finally {
+                            setIsUploading(false);
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-acme-orange text-white text-[10px] font-medium hover:bg-acme-orange/90 transition-colors disabled:opacity-50"
+                      >
+                        {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                        {isUploading ? "Uploading..." : "Upload"}
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-1">
                     {caseData.documents.map((doc, i) => {
