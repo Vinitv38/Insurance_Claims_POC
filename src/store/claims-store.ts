@@ -1007,13 +1007,16 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
     const { isInitialized } = get();
     if (isInitialized) return;
 
-    set({ isLoading: true });
+    // Don't set isLoading — show mock data immediately while fetching
+    const startTime = performance.now();
+    console.log("[ClaimsStore] Fetching data from Supabase...");
     try {
       const [claims, skillSets, fatalOverrides] = await Promise.all([
         fetchAllClaims(),
         fetchSkillSets(),
         fetchFatalOverrides(),
       ]);
+      const elapsed = Math.round(performance.now() - startTime);
 
       if (claims.length > 0) {
         set({
@@ -1024,13 +1027,14 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
           isInitialized: true,
           isLoading: false,
         });
-        console.log(`[ClaimsStore] Loaded ${claims.length} claims from Supabase`);
+        console.log(`[ClaimsStore] Loaded ${claims.length} claims from Supabase in ${elapsed}ms`);
       } else {
         set({ isInitialized: true, isLoading: false, dataSource: "mock" });
-        console.log("[ClaimsStore] No data in Supabase, using mock data");
+        console.log(`[ClaimsStore] No data in Supabase (${elapsed}ms), using mock data`);
       }
     } catch (error) {
-      console.warn("[ClaimsStore] Supabase fetch failed, using mock data:", error);
+      const elapsed = Math.round(performance.now() - startTime);
+      console.warn(`[ClaimsStore] Supabase fetch failed after ${elapsed}ms, using mock data:`, error);
       set({ isInitialized: true, isLoading: false, dataSource: "mock" });
     }
   },

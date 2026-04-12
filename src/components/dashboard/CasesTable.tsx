@@ -25,7 +25,6 @@ function getScoreBg(score: number) {
 export default function CasesTable() {
   const router = useRouter();
   const cases = useClaimsStore((s) => s.cases);
-  const isLoading = useClaimsStore((s) => s.isLoading);
   const [typeFilter, setTypeFilter] = useState("All Types");
   const [statusFilter, setStatusFilter] = useState("All Status");
 
@@ -98,20 +97,7 @@ export default function CasesTable() {
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <tr key={`skeleton-${i}`} className="border-b border-acme-border/50 animate-pulse">
-                  <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-32" /></td>
-                  <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-28" /></td>
-                  <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-24" /></td>
-                  <td className="px-5 py-3.5 text-center"><div className="h-7 bg-gray-200 rounded w-12 mx-auto" /></td>
-                  <td className="px-5 py-3.5"><div className="h-5 bg-gray-200 rounded w-20" /></td>
-                  <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-24" /></td>
-                  <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-20" /></td>
-                  <td className="px-5 py-3.5"><div className="h-4 bg-gray-200 rounded w-4 mx-auto" /></td>
-                </tr>
-              ))
-            ) : filteredCases.length === 0 ? (
+            {filteredCases.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-5 py-8 text-center text-sm text-gray-400">
                   No claims match the selected filters
