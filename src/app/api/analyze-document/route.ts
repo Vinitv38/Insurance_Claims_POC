@@ -100,8 +100,9 @@ export async function POST(request: NextRequest) {
     }
 
     const markdownContent = result.analyzeResult?.content || "";
+    const fullJson = result.analyzeResult || {};
 
-    return NextResponse.json({ markdown: markdownContent });
+    return NextResponse.json({ markdown: markdownContent, jsonResult: fullJson });
   } catch (error) {
     console.error("Document analysis error:", error);
     return NextResponse.json(

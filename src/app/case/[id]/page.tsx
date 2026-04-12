@@ -926,7 +926,7 @@ export default function CaseDetailPage() {
                                 .then((res) => res.json())
                                 .then((data) => {
                                   if (data.markdown) {
-                                    updateDocumentMarkdown(docId, data.markdown).catch(console.error);
+                                    updateDocumentMarkdown(docId, data.markdown, data.jsonResult).catch(console.error);
                                   }
                                 })
                                 .catch(console.error);

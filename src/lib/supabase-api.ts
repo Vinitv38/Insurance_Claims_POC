@@ -414,13 +414,33 @@ export async function deleteFatalOverrideFromDb(id: string): Promise<void> {
 
 export async function updateDocumentMarkdown(
   docId: string,
-  markdown: string
+  markdown: string,
+  jsonResult?: Record<string, unknown>
 ): Promise<void> {
+  const updates: Record<string, unknown> = { ai_interpreted_md: markdown };
+  if (jsonResult) {
+    updates.json_schema = jsonResult;
+  }
   const { error } = await supabase
     .from("documents")
-    .update({ ai_interpreted_md: markdown })
+    .update(updates)
     .eq("id", docId);
   if (error) throw error;
+}
+
+export async function fetchDocumentsWithoutMarkdown(): Promise<
+  { id: string; filePath: string }[]
+> {
+  const { data, error } = await supabase
+    .from("documents")
+    .select("id, file_path")
+    .not("file_path", "is", null)
+    .is("ai_interpreted_md", null);
+  if (error) throw error;
+  return (data || []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    filePath: row.file_path as string,
+  }));
 }
 
 /* ===== FILE UPLOAD ===== */
