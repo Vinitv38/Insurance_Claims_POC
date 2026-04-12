@@ -23,8 +23,9 @@ export default function HomePage() {
     assignedGroup: "Queue",
   });
 
+  const isLoading = useClaimsStore((s) => s.isLoading);
   const activeClaims = cases.filter((c) => c.status !== "closed").length;
-  const stpRate = Math.round((cases.filter((c) => c.status === "auto_approved").length / cases.length) * 100);
+  const stpRate = cases.length > 0 ? Math.round((cases.filter((c) => c.status === "auto_approved").length / cases.length) * 100) : 0;
   const escalatedToday = cases.filter((c) => c.status === "escalated").length;
   const pendingReview = cases.filter((c) => c.status === "in_review" || c.status === "pending").length;
 
@@ -106,7 +107,7 @@ export default function HomePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Active Claims in Queue"
-          value={activeClaims}
+          value={isLoading ? "—" : activeClaims}
           subtitle="Across all product lines"
           icon={Activity}
           color="orange"
@@ -114,7 +115,7 @@ export default function HomePage() {
         />
         <MetricCard
           title="Straight-Through Processing %"
-          value={`${stpRate}%`}
+          value={isLoading ? "—" : `${stpRate}%`}
           subtitle="Auto-approved without manual review"
           icon={Zap}
           color="green"
@@ -122,7 +123,7 @@ export default function HomePage() {
         />
         <MetricCard
           title="Fatal Overrides Today"
-          value={escalatedToday}
+          value={isLoading ? "—" : escalatedToday}
           subtitle="Auto-escalated by rules engine"
           icon={AlertTriangle}
           color="red"
@@ -130,7 +131,7 @@ export default function HomePage() {
         />
         <MetricCard
           title="Pending Review"
-          value={pendingReview}
+          value={isLoading ? "—" : pendingReview}
           subtitle="Awaiting adjuster action"
           icon={Clock}
           color="amber"
