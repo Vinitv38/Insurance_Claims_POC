@@ -8,7 +8,7 @@ interface StatusBadgeProps {
 }
 
 const statusConfig: Record<string, { label: string; classes: string }> = {
-  auto_approved: { label: "Auto-Approved", classes: "bg-green-50 text-green-700 border-green-200" },
+  auto_approved: { label: "Approved", classes: "bg-green-50 text-green-700 border-green-200" },
   in_review: { label: "In Review", classes: "bg-amber-50 text-amber-700 border-amber-200" },
   escalated: { label: "Escalated", classes: "bg-red-50 text-red-700 border-red-200" },
   closed: { label: "Closed", classes: "bg-gray-50 text-gray-600 border-gray-200" },

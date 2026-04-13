@@ -1,12 +1,13 @@
 "use client";
 
+import React from "react";
 import { useClaimsStore } from "@/store/claims-store";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   SlidersHorizontal, AlertTriangle, Save, Plus, Trash2, Power, PowerOff,
-  CheckCircle2, XCircle, ChevronRight, Users, Edit3, ArrowRight, BarChart3
+  CheckCircle2, XCircle, ChevronRight, Users, Edit3, ArrowRight, BarChart3, ChevronDown
 } from "lucide-react";
 
 type ConfigTab = "weights" | "routing";
@@ -22,7 +23,8 @@ export default function ConfiguratorPage() {
   const updateSkillSet = useClaimsStore((s) => s.updateSkillSet);
   const cases = useClaimsStore((s) => s.cases);
 
-  const [activeTab, setActiveTab] = useState<ConfigTab>("weights");
+  const [activeTab, setActiveTab] = useState<ConfigTab>("routing");
+  const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
   const [localWeights, setLocalWeights] = useState(vectorWeights);
   const [published, setPublished] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
@@ -57,6 +59,34 @@ export default function ConfiguratorPage() {
 
   const getRoutedCases = (minScore: number, maxScore: number) => {
     return cases.filter((c) => c.complexityScore >= minScore && c.complexityScore <= maxScore);
+  };
+
+  // Mock team members for each skill set
+  const skillTeamMembers: Record<string, Array<{ name: string; bandwidth: number; activeCases: number }>> = {
+    "skill-stp": [
+      { name: "James Porter", bandwidth: 85, activeCases: 12 },
+      { name: "Amy Richards", bandwidth: 72, activeCases: 18 },
+      { name: "David Nguyen", bandwidth: 90, activeCases: 8 },
+    ],
+    "skill-junior": [
+      { name: "Sarah Chen", bandwidth: 60, activeCases: 24 },
+      { name: "Michael Torres", bandwidth: 45, activeCases: 31 },
+      { name: "Lisa Park", bandwidth: 78, activeCases: 15 },
+      { name: "Ryan O'Brien", bandwidth: 55, activeCases: 22 },
+    ],
+    "skill-senior": [
+      { name: "Marcus Williams", bandwidth: 40, activeCases: 28 },
+      { name: "Patricia Grant", bandwidth: 65, activeCases: 19 },
+      { name: "Thomas Beck", bandwidth: 50, activeCases: 25 },
+    ],
+    "skill-clinical": [
+      { name: "Dr. Karen Volkov", bandwidth: 35, activeCases: 14 },
+      { name: "Dr. Henry Marsh", bandwidth: 55, activeCases: 10 },
+    ],
+    "skill-siu": [
+      { name: "Rachel Kim", bandwidth: 70, activeCases: 6 },
+      { name: "Derek Frost", bandwidth: 80, activeCases: 4 },
+    ],
   };
 
   const vectors = [
@@ -102,19 +132,19 @@ export default function ConfiguratorPage() {
         </div>
       </div>
 
-      {/* Tab Switcher */}
+      {/* Tab Switcher — Skill Routing first */}
       <div className="flex items-center gap-1 border-b border-acme-border overflow-x-auto">
-        <button
-          onClick={() => setActiveTab("weights")}
-          className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", activeTab === "weights" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
-        >
-          <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Weights & Overrides
-        </button>
         <button
           onClick={() => setActiveTab("routing")}
           className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", activeTab === "routing" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
         >
           <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Skill Routing
+        </button>
+        <button
+          onClick={() => setActiveTab("weights")}
+          className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", activeTab === "weights" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Weights & Overrides
         </button>
       </div>
 
@@ -145,15 +175,30 @@ export default function ConfiguratorPage() {
                       </div>
                       <span className={cn("text-sm font-bold tabular-nums", v.textColor)}>{localWeights[v.key]}%</span>
                     </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={localWeights[v.key]}
-                      onChange={(e) => handleSliderChange(v.key, parseInt(e.target.value))}
-                      className="w-full h-2 rounded-full appearance-none cursor-pointer bg-gray-200 accent-acme-orange"
-                      style={{ accentColor: v.color.includes("blue") ? "#3B82F6" : v.color.includes("amber") ? "#F59E0B" : v.color.includes("orange") ? "#E8792B" : "#A855F7" }}
-                    />
+                    <div className="relative w-full h-2 rounded-full bg-gray-200">
+                      <div
+                        className="absolute top-0 left-0 h-full rounded-full transition-all duration-150"
+                        style={{
+                          width: `${localWeights[v.key]}%`,
+                          backgroundColor: v.color.includes("blue") ? "#3B82F6" : v.color.includes("amber") ? "#F59E0B" : v.color.includes("orange") ? "#E8792B" : "#A855F7",
+                        }}
+                      />
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={localWeights[v.key]}
+                        onChange={(e) => handleSliderChange(v.key, parseInt(e.target.value))}
+                        className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 shadow-sm pointer-events-none transition-all duration-150"
+                        style={{
+                          left: `calc(${localWeights[v.key]}% - 8px)`,
+                          borderColor: v.color.includes("blue") ? "#3B82F6" : v.color.includes("amber") ? "#F59E0B" : v.color.includes("orange") ? "#E8792B" : "#A855F7",
+                        }}
+                      />
+                    </div>
                     <div className="flex justify-between text-[10px] text-gray-500">
                       <span>0%</span>
                       <span>50%</span>
@@ -350,7 +395,7 @@ export default function ConfiguratorPage() {
                   >
                     <div className="text-center">
                       <p className="text-[10px] font-bold text-gray-800">{skill.name}</p>
-                      <p className="text-[10px] text-gray-500">{skill.minScore}\u2013{skill.maxScore}</p>
+                      <p className="text-[10px] text-gray-500">{skill.minScore}–{skill.maxScore}</p>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: skill.color }} />
                   </motion.div>
@@ -386,82 +431,133 @@ export default function ConfiguratorPage() {
                 {skillSets.map((skill) => {
                   const routedCases = getRoutedCases(skill.minScore, skill.maxScore);
                   const isEditing = editingId === skill.id;
+                  const isExpanded = expandedSkill === skill.id;
+                  const teamMembers = skillTeamMembers[skill.id] || [];
 
                   return (
-                    <motion.tr
-                      key={skill.id}
-                      layout
-                      className="border-b border-acme-border/50 hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-8 rounded" style={{ backgroundColor: skill.color }} />
-                          <span className="text-sm font-medium text-gray-900">{skill.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span className="text-xs text-gray-500">{skill.description}</span>
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        {isEditing ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <input
-                              type="number"
-                              value={skill.minScore}
-                              onChange={(e) => updateSkillSet(skill.id, { minScore: parseInt(e.target.value) || 0 })}
-                              className="w-14 bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-center text-gray-700 focus:outline-none focus:border-acme-orange/50"
-                            />
-                            <ArrowRight className="w-3 h-3 text-gray-400" />
-                            <input
-                              type="number"
-                              value={skill.maxScore}
-                              onChange={(e) => updateSkillSet(skill.id, { maxScore: parseInt(e.target.value) || 0 })}
-                              className="w-14 bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-center text-gray-700 focus:outline-none focus:border-acme-orange/50"
-                            />
+                    <React.Fragment key={skill.id}>
+                      <motion.tr
+                        layout
+                        className={cn("border-b border-acme-border/50 hover:bg-gray-50 transition-colors cursor-pointer", isExpanded && "bg-orange-50/30")}
+                        onClick={() => setExpandedSkill(isExpanded ? null : skill.id)}
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <ChevronDown className={cn("w-3.5 h-3.5 text-gray-400 transition-transform", isExpanded && "rotate-180")} />
+                            <div className="w-3 h-8 rounded" style={{ backgroundColor: skill.color }} />
+                            <span className="text-sm font-medium text-gray-900">{skill.name}</span>
                           </div>
-                        ) : (
-                          <span className="text-xs font-mono px-2 py-1 rounded bg-gray-100 text-gray-700">
-                            {skill.minScore} — {skill.maxScore}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        <span className="text-sm font-medium text-gray-900">{skill.userCount}</span>
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-16 h-2 rounded-full bg-gray-200 overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{
-                                width: `${skill.capacityFree}%`,
-                                backgroundColor: skill.capacityFree > 50 ? "#22C55E" : skill.capacityFree > 25 ? "#F59E0B" : "#EF4444",
-                              }}
-                            />
-                          </div>
-                          <span className={cn(
-                            "text-xs font-medium",
-                            skill.capacityFree > 50 ? "text-green-600" : skill.capacityFree > 25 ? "text-amber-600" : "text-red-600"
-                          )}>
-                            {skill.capacityFree}%
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        <span className="text-xs font-bold text-acme-orange">{routedCases.length}</span>
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        <button
-                          onClick={() => setEditingId(isEditing ? null : skill.id)}
-                          className={cn(
-                            "p-1.5 rounded transition-colors",
-                            isEditing ? "bg-orange-50 text-acme-orange" : "text-gray-400 hover:text-gray-900 hover:bg-gray-100"
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="text-xs text-gray-500">{skill.description}</span>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          {isEditing ? (
+                            <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="number"
+                                value={skill.minScore}
+                                onChange={(e) => updateSkillSet(skill.id, { minScore: parseInt(e.target.value) || 0 })}
+                                className="w-14 bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-center text-gray-700 focus:outline-none focus:border-acme-orange/50"
+                              />
+                              <ArrowRight className="w-3 h-3 text-gray-400" />
+                              <input
+                                type="number"
+                                value={skill.maxScore}
+                                onChange={(e) => updateSkillSet(skill.id, { maxScore: parseInt(e.target.value) || 0 })}
+                                className="w-14 bg-gray-50 border border-acme-border rounded px-2 py-1 text-xs text-center text-gray-700 focus:outline-none focus:border-acme-orange/50"
+                              />
+                            </div>
+                          ) : (
+                            <span className="text-xs font-mono px-2 py-1 rounded bg-gray-100 text-gray-700">
+                              {skill.minScore} — {skill.maxScore}
+                            </span>
                           )}
-                        >
-                          {isEditing ? <Save className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5" />}
-                        </button>
-                      </td>
-                    </motion.tr>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <span className="text-sm font-medium text-gray-900">{skill.userCount}</span>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-16 h-2 rounded-full bg-gray-200 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{
+                                  width: `${skill.capacityFree}%`,
+                                  backgroundColor: skill.capacityFree > 50 ? "#22C55E" : skill.capacityFree > 25 ? "#F59E0B" : "#EF4444",
+                                }}
+                              />
+                            </div>
+                            <span className={cn(
+                              "text-xs font-medium",
+                              skill.capacityFree > 50 ? "text-green-600" : skill.capacityFree > 25 ? "text-amber-600" : "text-red-600"
+                            )}>
+                              {skill.capacityFree}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <span className="text-xs font-bold text-acme-orange">{routedCases.length}</span>
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditingId(isEditing ? null : skill.id); }}
+                            className={cn(
+                              "p-1.5 rounded transition-colors",
+                              isEditing ? "bg-orange-50 text-acme-orange" : "text-gray-400 hover:text-gray-900 hover:bg-gray-100"
+                            )}
+                          >
+                            {isEditing ? <Save className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5" />}
+                          </button>
+                        </td>
+                      </motion.tr>
+                      {/* Expandable team members dropdown */}
+                      {isExpanded && teamMembers.length > 0 && (
+                        <tr className="border-b border-acme-border/50">
+                          <td colSpan={7} className="px-5 py-0">
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="py-3 pl-10 space-y-2">
+                                <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Team Members & Bandwidth</p>
+                                {teamMembers.map((member) => (
+                                  <div key={member.name} className="flex items-center gap-4 py-1.5 px-3 rounded-lg bg-gray-50 border border-acme-border/50">
+                                    <div className="w-7 h-7 rounded-full bg-acme-teal/10 flex items-center justify-center flex-shrink-0">
+                                      <span className="text-[10px] font-bold text-acme-teal">{member.name.split(" ").map(n => n[0]).join("")}</span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-gray-900">{member.name}</p>
+                                      <p className="text-[10px] text-gray-500">{member.activeCases} active cases</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      <span className="text-[10px] text-gray-500">Bandwidth</span>
+                                      <div className="w-20 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                                        <div
+                                          className="h-full rounded-full transition-all duration-500"
+                                          style={{
+                                            width: `${member.bandwidth}%`,
+                                            backgroundColor: member.bandwidth > 60 ? "#22C55E" : member.bandwidth > 30 ? "#F59E0B" : "#EF4444",
+                                          }}
+                                        />
+                                      </div>
+                                      <span className={cn(
+                                        "text-[10px] font-medium w-8 text-right",
+                                        member.bandwidth > 60 ? "text-green-600" : member.bandwidth > 30 ? "text-amber-600" : "text-red-600"
+                                      )}>
+                                        {member.bandwidth}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

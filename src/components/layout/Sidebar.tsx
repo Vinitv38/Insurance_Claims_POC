@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Command Center", href: "/", icon: LayoutDashboard },
+  { name: "Home", href: "/", icon: LayoutDashboard },
   { name: "Configuration", href: "/configurator", icon: SlidersHorizontal },
   { name: "Reports", href: "/reports", icon: BarChart3 },
 ];
@@ -77,7 +77,7 @@ export default function Sidebar() {
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-base font-bold text-white tracking-tight">Acme Insurance</h1>
+          <h1 className="text-base font-bold text-white tracking-tight">Illumifin</h1>
           <p className="text-[10px] text-white/50 font-medium tracking-widest uppercase">Claims AI Engine</p>
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function Sidebar() {
           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse-glow" />
           <span className="text-[10px] text-white/50">AI Engine: Online</span>
         </div>
-        <p className="text-[10px] text-white/30 mt-1">v2.4.1 — Logic Apps Connected</p>
+        <p className="text-[10px] text-white/30 mt-1">v2.4.1 — EngaigeQ Claims Connected</p>
       </div>
       </aside>
     </>

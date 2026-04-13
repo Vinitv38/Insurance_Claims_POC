@@ -30,7 +30,7 @@ export default function CasesTable() {
   const [statusFilter, setStatusFilter] = useState("All Status");
 
   const statusMap: Record<string, string> = {
-    "Auto-Approved": "auto_approved",
+    "Approved": "auto_approved",
     "In Review": "in_review",
     "Escalated": "escalated",
     "Pending": "pending",
@@ -67,7 +67,7 @@ export default function CasesTable() {
             className="bg-gray-50 border border-acme-border rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-acme-orange/50"
           >
             <option>All Status</option>
-            <option>Auto-Approved</option>
+            <option>Approved</option>
             <option>In Review</option>
             <option>Escalated</option>
             <option>Pending</option>
@@ -87,6 +87,7 @@ export default function CasesTable() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-acme-border bg-[#F0F7F8]">
+              <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Claim ID</th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Claimant</th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Policy</th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Type</th>
@@ -113,7 +114,7 @@ export default function CasesTable() {
               ))
             ) : filteredCases.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-5 py-8 text-center text-sm text-gray-400">
+                <td colSpan={9} className="px-5 py-8 text-center text-sm text-gray-400">
                   No claims match the selected filters
                 </td>
               </tr>
@@ -134,6 +135,9 @@ export default function CasesTable() {
                     c.status === "closed" && "border-l-2 border-l-gray-400/40",
                   )}
                 >
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-mono text-acme-orange font-medium">{c.id}</span>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {c.status === "escalated" && <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}

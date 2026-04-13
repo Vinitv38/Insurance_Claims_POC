@@ -138,7 +138,7 @@ export default function ReportsPage() {
           <div className="p-5 space-y-4">
             {/* Visual pie representation */}
             <div className="flex justify-center">
-              <div className="relative w-32 h-32">
+              <div className="relative w-48 h-48">
                 <svg viewBox="0 0 32 32" className="w-full h-full -rotate-90">
                   {(() => {
                     let offset = 0;
