@@ -75,6 +75,11 @@ body {
 }
 .spin-slow { animation: spin-slow 3s linear infinite; }
 
+/* Scale entire UI down on desktop to match 80% zoom appearance at 100% zoom */
+@media (min-width: 1024px) {
+  html { zoom: 0.85; }
+}
+
 @layer utilities {
   .text-balance { text-wrap: balance; }
 }
