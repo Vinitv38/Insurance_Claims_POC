@@ -61,29 +61,24 @@ export default function ConfiguratorPage() {
     return cases.filter((c) => c.complexityScore >= minScore && c.complexityScore <= maxScore);
   };
 
-  // Mock team members for each skill set
+  // Mock team members for each skill set (IDs match seed data: skill-1 through skill-4)
   const skillTeamMembers: Record<string, Array<{ name: string; bandwidth: number; activeCases: number }>> = {
-    "skill-stp": [
+    "skill-1": [
       { name: "James Porter", bandwidth: 85, activeCases: 12 },
       { name: "Amy Richards", bandwidth: 72, activeCases: 18 },
       { name: "David Nguyen", bandwidth: 90, activeCases: 8 },
-    ],
-    "skill-junior": [
       { name: "Sarah Chen", bandwidth: 60, activeCases: 24 },
-      { name: "Michael Torres", bandwidth: 45, activeCases: 31 },
-      { name: "Lisa Park", bandwidth: 78, activeCases: 15 },
-      { name: "Ryan O'Brien", bandwidth: 55, activeCases: 22 },
     ],
-    "skill-senior": [
+    "skill-2": [
       { name: "Marcus Williams", bandwidth: 40, activeCases: 28 },
       { name: "Patricia Grant", bandwidth: 65, activeCases: 19 },
       { name: "Thomas Beck", bandwidth: 50, activeCases: 25 },
     ],
-    "skill-clinical": [
+    "skill-3": [
       { name: "Dr. Karen Volkov", bandwidth: 35, activeCases: 14 },
       { name: "Dr. Henry Marsh", bandwidth: 55, activeCases: 10 },
     ],
-    "skill-siu": [
+    "skill-4": [
       { name: "Rachel Kim", bandwidth: 70, activeCases: 6 },
       { name: "Derek Frost", bandwidth: 80, activeCases: 4 },
     ],
