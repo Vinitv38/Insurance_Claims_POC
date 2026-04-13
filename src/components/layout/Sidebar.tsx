@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   SlidersHorizontal,
   BarChart3,
   Shield,
+  Menu,
+  X,
 } from "lucide-react";
 
 const navigation = [
@@ -18,10 +21,57 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-[#15393F] bg-[#18434A] flex flex-col">
-      {/* Logo */}
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-3 left-3 z-50 lg:hidden p-2 rounded-lg bg-[#18434A] text-white shadow-lg hover:bg-[#15393F] transition-colors"
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed top-0 z-50 h-screen w-64 border-r border-[#15393F] bg-[#18434A] flex flex-col transition-transform duration-300 ease-in-out",
+          "lg:left-0 lg:translate-x-0",
+          mobileOpen ? "left-0 translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        {/* Close button for mobile */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="absolute top-3 right-3 p-1.5 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-colors lg:hidden"
+          aria-label="Close menu"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
         <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-acme-orange to-amber-400">
           <Shield className="w-5 h-5 text-white" />
@@ -63,6 +113,7 @@ export default function Sidebar() {
         </div>
         <p className="text-[10px] text-white/30 mt-1">v2.4.1 — Logic Apps Connected</p>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

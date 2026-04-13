@@ -12,7 +12,7 @@ import {
   Brain, Eye, ChevronRight, Loader2,
   Stethoscope, Shield, FileSearch, Code, FileType,
   ClipboardList, Download, ExternalLink, Image as ImageIcon,
-  FileSpreadsheet, Activity, ZoomIn, ZoomOut, Plus
+  FileSpreadsheet, Activity, ZoomIn, ZoomOut, Plus, UserCheck
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
 import { uploadDocumentFile, insertDocument, updateDocumentMarkdown } from "@/lib/supabase-api";
@@ -156,18 +156,6 @@ export default function CaseDetailPage() {
                 style={{ width: `${imageZoom}%`, maxWidth: `${imageZoom * 2}%` }}
               />
             </div>
-            {doc.extractedText && (
-              <details className="mt-2">
-                <summary className="text-[10px] text-gray-500 cursor-pointer hover:text-gray-700 uppercase tracking-wider font-semibold">
-                  Extracted Text (OCR/AI)
-                </summary>
-                <div className="bg-gray-50 rounded-lg p-3 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed mt-1">
-                  {doc.extractedText.split("\n").map((line, i) => (
-                    <div key={i} className="py-0.5">{line}</div>
-                  ))}
-                </div>
-              </details>
-            )}
           </div>
         );
       }
@@ -188,22 +176,9 @@ export default function CaseDetailPage() {
             </div>
             <iframe
               src={doc.filePath}
-              className="w-full h-[350px] rounded-lg border border-acme-border bg-white"
+              className="w-full h-[500px] rounded-lg border border-acme-border bg-white"
               title={doc.name}
             />
-            {/* Also show extracted text below the PDF */}
-            {doc.extractedText && (
-              <details className="mt-2">
-                <summary className="text-[10px] text-gray-500 cursor-pointer hover:text-gray-700 uppercase tracking-wider font-semibold">
-                  Extracted Text (OCR/AI)
-                </summary>
-                <div className="bg-gray-50 rounded-lg p-3 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed mt-1">
-                  {doc.extractedText.split("\n").map((line, i) => (
-                    <div key={i} className="py-0.5">{line}</div>
-                  ))}
-                </div>
-              </details>
-            )}
           </div>
         );
       }
@@ -447,7 +422,7 @@ export default function CaseDetailPage() {
   /* Decision Tab - AI Summary + Document Viewer + Complexity Vectors */
   function renderDecisionTab() {
     return (
-      <div className="grid grid-cols-2 gap-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
         {/* Left Pane: AI Decision Summary + Complexity Vectors */}
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col flex-1">
@@ -517,10 +492,53 @@ export default function CaseDetailPage() {
                 </div>
                 <p className="text-[10px] text-gray-500 mt-2">Based on {caseData.documents.length} source documents analyzed.</p>
               </div>
+
+              {/* Physician Verification */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <UserCheck className="w-4 h-4 text-purple-500" />
+                  <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wider">Physician Verification</h3>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200 space-y-3">
+                  {[
+                    { name: "Dr. Sarah Chen, MD", specialty: "Internal Medicine", npi: "1234567890", status: "verified" as const, date: "2026-04-02" },
+                    { name: "Dr. James Rivera, DO", specialty: "Orthopedic Surgery", npi: "0987654321", status: caseData.status === "escalated" ? "pending" as const : "verified" as const, date: "2026-04-05" },
+                    { name: "Dr. Karen Volkov, PhD", specialty: "Clinical Neuropsychology", npi: "1122334455", status: caseData.status === "escalated" ? "flagged" as const : "verified" as const, date: "2026-04-08" },
+                  ].map((physician, i) => (
+                    <div key={i} className="flex items-center gap-3 bg-white rounded-lg p-3 border border-purple-100">
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
+                        physician.status === "verified" ? "bg-green-100 text-green-600" :
+                        physician.status === "flagged" ? "bg-red-100 text-red-600" :
+                        "bg-amber-100 text-amber-600"
+                      )}>
+                        {physician.status === "verified" ? <CheckCircle2 className="w-4 h-4" /> :
+                         physician.status === "flagged" ? <AlertTriangle className="w-4 h-4" /> :
+                         <Clock className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-800">{physician.name}</p>
+                        <p className="text-[10px] text-gray-500">{physician.specialty} — NPI: {physician.npi}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className={cn(
+                          "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
+                          physician.status === "verified" ? "bg-green-50 text-green-600 border border-green-200" :
+                          physician.status === "flagged" ? "bg-red-50 text-red-600 border border-red-200" :
+                          "bg-amber-50 text-amber-600 border border-amber-200"
+                        )}>
+                          {physician.status}
+                        </span>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{physician.date}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Complexity Vectors - moved from Tab 1 */}
+          {/* Complexity Vectors */}
           <div className="rounded-xl border border-acme-border bg-white p-4">
             <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Complexity Vectors</h3>
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
@@ -531,7 +549,6 @@ export default function CaseDetailPage() {
             </div>
           </div>
 
-          {/* AI Semantic Log for Hargrove - moved from Tab 1 */}
         </div>
 
         {/* Right Pane: Document List + Document Viewer */}
@@ -539,7 +556,7 @@ export default function CaseDetailPage() {
           {/* Document list for Tab 2 */}
           <div className="rounded-xl border border-acme-border bg-white p-4">
             <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Documents</h3>
-            <div className="space-y-1 max-h-[200px] overflow-y-auto">
+            <div className="space-y-1 max-h-[140px] overflow-y-auto">
               {caseData.documents.map((doc) => (
                 <button
                   key={doc.id}
@@ -585,22 +602,22 @@ export default function CaseDetailPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.push("/")} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-gray-400" />
+      <div className="flex items-start sm:items-center justify-between gap-2">
+        <div className="flex items-start sm:items-center gap-2 sm:gap-4 min-w-0">
+          <button onClick={() => router.push("/")} className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
           </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-acme-teal">{caseData.claimantName}</h1>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-acme-teal truncate">{caseData.claimantName}</h1>
               <StatusBadge status={caseData.status} />
-              <span className={cn("text-xs font-bold px-2 py-0.5 rounded", caseData.complexityScore <= 30 ? "bg-green-50 text-green-700" : caseData.complexityScore <= 60 ? "bg-amber-50 text-amber-700" : caseData.complexityScore <= 80 ? "bg-acme-orange/10 text-acme-orange" : "bg-red-50 text-red-700")}>
+              <span className={cn("text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded", caseData.complexityScore <= 30 ? "bg-green-50 text-green-700" : caseData.complexityScore <= 60 ? "bg-amber-50 text-amber-700" : caseData.complexityScore <= 80 ? "bg-acme-orange/10 text-acme-orange" : "bg-red-50 text-red-700")}>
                 Score: {caseData.complexityScore}/100
               </span>
             </div>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
               {caseData.policyNumber} — {caseData.diagnosis}
             </p>
           </div>
@@ -608,18 +625,18 @@ export default function CaseDetailPage() {
       </div>
 
       {/* Main Tab Switcher */}
-      <div className="flex items-center gap-1 border-b border-acme-border">
+      <div className="flex items-center gap-1 border-b border-acme-border overflow-x-auto">
         <button
           onClick={() => setMainTab("overview")}
-          className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px", mainTab === "overview" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+          className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", mainTab === "overview" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
         >
-          <FileSearch className="w-4 h-4" /> Case Overview
+          <FileSearch className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Case Overview
         </button>
         <button
           onClick={() => setMainTab("decision")}
-          className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px", mainTab === "decision" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+          className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", mainTab === "decision" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
         >
-          <Brain className="w-4 h-4" /> AI Decision Summary
+          <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> AI Decision Summary
         </button>
       </div>
 
@@ -667,9 +684,9 @@ export default function CaseDetailPage() {
             </div>
 
             {/* ===== EXPANDED CASE DETAILS GRID ===== */}
-            <div className="rounded-xl border border-acme-border bg-white p-5">
-              <h3 className="text-xs font-semibold text-acme-teal mb-4 uppercase tracking-wider">Case Details</h3>
-              <div className="grid grid-cols-4 gap-x-6 gap-y-4">
+            <div className="rounded-xl border border-acme-border bg-white p-3 sm:p-4 lg:p-5">
+              <h3 className="text-xs font-semibold text-acme-teal mb-3 sm:mb-4 uppercase tracking-wider">Case Details</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-3 sm:gap-y-4">
                 <div>
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Claimant</span>
                   <p className="text-sm font-medium text-gray-900">{caseData.claimantName}</p>
@@ -734,10 +751,10 @@ export default function CaseDetailPage() {
             {renderRecommendedAction()}
 
             {/* ===== MAIN CONTENT: Documents + Recent Activities ===== */}
-            <div className="grid grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
 
               {/* Left: Documents List + Upload Zone */}
-              <div className="col-span-5 space-y-4">
+              <div className="lg:col-span-5 space-y-4">
 
                 {/* Document List */}
                 <div className="rounded-xl border border-acme-border bg-white p-4">
@@ -823,7 +840,7 @@ export default function CaseDetailPage() {
               </div>
 
               {/* Right: Recent Activities */}
-              <div className="col-span-7 space-y-4">
+              <div className="lg:col-span-7 space-y-4">
                 <div className="rounded-xl border border-acme-border bg-white p-4">
                   <div className="flex items-center gap-2 mb-4">
                     <Activity className="w-4 h-4 text-acme-orange" />

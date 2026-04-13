@@ -46,12 +46,12 @@ export default function CasesTable() {
 
   return (
     <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
-      <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-acme-teal">Active Claims Queue</h3>
-          <p className="text-xs text-gray-500 mt-0.5">Real-time triage overview — click any row for detail</p>
+      <div className="px-3 sm:px-5 py-3 sm:py-4 border-b border-acme-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="text-xs sm:text-sm font-semibold text-acme-teal">Active Claims Queue</h3>
+          <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Real-time triage overview — click any row for detail</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}

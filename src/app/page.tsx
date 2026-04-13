@@ -82,29 +82,29 @@ export default function HomePage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-acme-teal">Global Triage Command Center</h1>
-          <p className="text-sm text-gray-500 mt-1">AI-powered claims complexity engine — operational overview</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-acme-teal">Global Triage Command Center</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">AI-powered claims complexity engine — operational overview</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <button
             onClick={() => setShowNewClaim(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-acme-orange text-white text-sm font-medium hover:bg-acme-orange/90 transition-colors"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-acme-orange text-white text-xs sm:text-sm font-medium hover:bg-acme-orange/90 transition-colors"
           >
-            <Plus className="w-4 h-4" /> New Claim
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> New Claim
           </button>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200">
+          <div className="flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-green-50 border border-green-200">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse-glow" />
-            <span className="text-xs font-medium text-green-700">System Online</span>
+            <span className="text-[10px] sm:text-xs font-medium text-green-700">System Online</span>
           </div>
         </div>
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           title="Active Claims in Queue"
           value={isLoading ? "—" : activeClaims}
@@ -139,7 +139,7 @@ export default function HomePage() {
       </div>
 
       {/* Secondary Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard title="Avg. Complexity Score" value="48.2" icon={TrendingUp} color="teal" subtitle="Across all active claims" />
         <MetricCard title="Documents Processed" value="1,247" icon={FileStack} color="blue" subtitle="This month" trend={{ value: "156 today", positive: true }} />
         <MetricCard title="AI Accuracy Rate" value="94.7%" icon={CheckCircle2} color="purple" subtitle="Validated against adjuster decisions" />
@@ -147,7 +147,7 @@ export default function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="lg:col-span-2">
           <CasesTable />
         </div>
@@ -178,8 +178,8 @@ export default function HomePage() {
                   <X className="w-4 h-4 text-gray-400" />
                 </button>
               </div>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 sm:p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Claimant Name *</label>
                     <input
@@ -199,7 +199,7 @@ export default function HomePage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Claim Type</label>
                     <select
@@ -230,7 +230,7 @@ export default function HomePage() {
                     placeholder="Primary diagnosis"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Assigned To</label>
                     <input
