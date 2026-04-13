@@ -18,7 +18,7 @@ export default function RootLayout({
       <body className="bg-white text-gray-700 antialiased">
         <SupabaseInitializer>
           <Sidebar />
-          <main className="ml-64 min-h-screen">
+          <main className="ml-0 lg:ml-64 min-h-screen pt-14 lg:pt-0">
             {children}
           </main>
         </SupabaseInitializer>

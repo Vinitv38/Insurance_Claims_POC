@@ -67,14 +67,14 @@ export default function ConfiguratorPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-acme-teal">Configuration</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage scoring weights, fatal overrides, and skill routing</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-acme-teal">Configuration</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage scoring weights, fatal overrides, and skill routing</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {activeTab === "weights" && (
             <>
               {showSaveConfirm && (
@@ -103,25 +103,25 @@ export default function ConfiguratorPage() {
       </div>
 
       {/* Tab Switcher */}
-      <div className="flex items-center gap-1 border-b border-acme-border">
+      <div className="flex items-center gap-1 border-b border-acme-border overflow-x-auto">
         <button
           onClick={() => setActiveTab("weights")}
-          className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px", activeTab === "weights" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+          className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", activeTab === "weights" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
         >
-          <SlidersHorizontal className="w-4 h-4" /> Weights & Overrides
+          <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Weights & Overrides
         </button>
         <button
           onClick={() => setActiveTab("routing")}
-          className={cn("flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px", activeTab === "routing" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+          className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", activeTab === "routing" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
         >
-          <Users className="w-4 h-4" /> Skill Routing
+          <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Skill Routing
         </button>
       </div>
 
       {/* Weights & Overrides Tab */}
       {activeTab === "weights" && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Vector Weight Sliders */}
             <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
               <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
@@ -469,7 +469,7 @@ export default function ConfiguratorPage() {
           </div>
 
           {/* Routing Logic Summary Cards */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {skillSets.map((skill) => {
               const routedCases = getRoutedCases(skill.minScore, skill.maxScore);
               return (

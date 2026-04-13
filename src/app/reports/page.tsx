@@ -45,14 +45,14 @@ export default function ReportsPage() {
   const maxClaims = Math.max(...monthlyData.map((d) => d.claims));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-acme-teal">Management Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Executive reporting & analytics — Q1 2026 performance overview</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-acme-teal">Management Dashboard</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">Executive reporting & analytics — Q1 2026 performance overview</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <select className="bg-gray-50 border border-acme-border rounded-lg px-3 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-acme-orange/50">
             <option>Q1 2026</option>
             <option>Q4 2025</option>
@@ -67,16 +67,16 @@ export default function ReportsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard title="Total Claims (YTD)" value="1,081" icon={BarChart3} color="orange" subtitle="Across all product lines" trend={{ value: "8.4% vs prior year", positive: true }} />
         <MetricCard title="Straight-Through Rate" value="72.4%" icon={Zap} color="green" subtitle="Auto-processed without human review" trend={{ value: "5.1% improvement", positive: true }} />
         <MetricCard title="Avg. Resolution Time" value="3.2 days" icon={Clock} color="blue" subtitle="From filing to decision" trend={{ value: "0.8 days faster", positive: true }} />
         <MetricCard title="Customer Satisfaction" value="94.2%" icon={CheckCircle2} color="purple" subtitle="Post-claim survey score" trend={{ value: "1.3% improvement", positive: true }} />
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Monthly Claims Trend - Bar Chart */}
-        <div className="col-span-2 rounded-xl border border-acme-border bg-white overflow-hidden">
+        <div className="lg:col-span-2 rounded-xl border border-acme-border bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-acme-orange" />
             <h2 className="text-sm font-semibold text-acme-teal">Monthly Claims Trend</h2>
@@ -200,9 +200,9 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Team Performance */}
-        <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
+        <div className="rounded-xl border border-acme-border bg-white overflow-hidden overflow-x-auto">
           <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
             <Users className="w-4 h-4 text-acme-orange" />
             <h2 className="text-sm font-semibold text-acme-teal">Team Performance</h2>
