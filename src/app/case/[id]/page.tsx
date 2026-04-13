@@ -147,7 +147,7 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="rounded-lg border border-acme-border bg-gray-50 overflow-auto max-h-[500px] flex items-center justify-center p-4">
+            <div className="rounded-lg border border-acme-border bg-gray-50 overflow-auto max-h-[calc(100vh-280px)] flex items-center justify-center p-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={doc.filePath}
@@ -176,7 +176,7 @@ export default function CaseDetailPage() {
             </div>
             <iframe
               src={doc.filePath}
-              className="w-full h-[500px] rounded-lg border border-acme-border bg-white"
+              className="w-full h-[calc(100vh-280px)] rounded-lg border border-acme-border bg-white"
               title={doc.name}
             />
           </div>
@@ -197,7 +197,7 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed max-h-[500px] overflow-y-auto">
+            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed max-h-[calc(100vh-280px)] overflow-y-auto">
               {doc.extractedText?.split("\n").map((line, i) => {
                 const isHighlighted = line.includes("MISSING") || line.includes("FAILED") || line.includes("CRITICAL") || line.includes("CONTRADICTION") || line.includes("wheelchair") || line.includes("HANDWRITTEN") || line.includes("OCR") || line.includes("SENTIMENT");
                 return (
@@ -225,7 +225,7 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto max-h-[500px]">
+            <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto max-h-[calc(100vh-280px)]">
               <pre className="text-[11px] text-cyan-400 font-mono leading-relaxed whitespace-pre-wrap">
                 {doc.extractedText || "Loading JSON content..."}
               </pre>
@@ -248,7 +248,7 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed max-h-[500px] overflow-y-auto">
+            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed max-h-[calc(100vh-280px)] overflow-y-auto">
               {doc.extractedText?.split("\n").map((line, i) => (
                 <div key={i} className="py-0.5">{line}</div>
               ))}
@@ -348,7 +348,7 @@ export default function CaseDetailPage() {
 
           {docViewTab === "schema" && (
             <motion.div key="schema" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto max-h-[400px]">
+              <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto max-h-[calc(100vh-320px)]">
                 <pre className="text-[11px] text-green-400 font-mono leading-relaxed whitespace-pre-wrap">
                   {doc.jsonSchema ? JSON.stringify(doc.jsonSchema, null, 2) : "No JSON schema available for this document."}
                 </pre>
@@ -359,7 +359,7 @@ export default function CaseDetailPage() {
           {docViewTab === "interpreted" && (
             <motion.div key="interpreted" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {doc.aiInterpretedMd ? (
-                <div className="prose prose-sm max-w-none max-h-[400px] overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
+                <div className="prose prose-sm max-w-none max-h-[calc(100vh-320px)] overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {doc.aiInterpretedMd}
                   </ReactMarkdown>
