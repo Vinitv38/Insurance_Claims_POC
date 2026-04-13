@@ -12,7 +12,7 @@ import {
   Brain, Eye, ChevronRight, Loader2,
   Stethoscope, Shield, FileSearch, Code, FileType,
   ClipboardList, Download, ExternalLink, Image as ImageIcon,
-  FileSpreadsheet, Activity, ZoomIn, ZoomOut, Plus, UserCheck
+  FileSpreadsheet, Activity, ZoomIn, ZoomOut, Plus
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
 import { uploadDocumentFile, insertDocument, updateDocumentMarkdown } from "@/lib/supabase-api";
@@ -422,9 +422,9 @@ export default function CaseDetailPage() {
   /* Decision Tab - AI Summary + Document Viewer + Complexity Vectors */
   function renderDecisionTab() {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
         {/* Left Pane: AI Decision Summary + Complexity Vectors */}
-        <div className="flex flex-col gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-4">
           <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col flex-1">
             <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
               <Brain className="w-4 h-4 text-acme-orange" />
@@ -493,48 +493,6 @@ export default function CaseDetailPage() {
                 <p className="text-[10px] text-gray-500 mt-2">Based on {caseData.documents.length} source documents analyzed.</p>
               </div>
 
-              {/* Physician Verification */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <UserCheck className="w-4 h-4 text-purple-500" />
-                  <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wider">Physician Verification</h3>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200 space-y-3">
-                  {[
-                    { name: "Dr. Sarah Chen, MD", specialty: "Internal Medicine", npi: "1234567890", status: "verified" as const, date: "2026-04-02" },
-                    { name: "Dr. James Rivera, DO", specialty: "Orthopedic Surgery", npi: "0987654321", status: caseData.status === "escalated" ? "pending" as const : "verified" as const, date: "2026-04-05" },
-                    { name: "Dr. Karen Volkov, PhD", specialty: "Clinical Neuropsychology", npi: "1122334455", status: caseData.status === "escalated" ? "flagged" as const : "verified" as const, date: "2026-04-08" },
-                  ].map((physician, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-white rounded-lg p-3 border border-purple-100">
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
-                        physician.status === "verified" ? "bg-green-100 text-green-600" :
-                        physician.status === "flagged" ? "bg-red-100 text-red-600" :
-                        "bg-amber-100 text-amber-600"
-                      )}>
-                        {physician.status === "verified" ? <CheckCircle2 className="w-4 h-4" /> :
-                         physician.status === "flagged" ? <AlertTriangle className="w-4 h-4" /> :
-                         <Clock className="w-4 h-4" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-800">{physician.name}</p>
-                        <p className="text-[10px] text-gray-500">{physician.specialty} — NPI: {physician.npi}</p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <span className={cn(
-                          "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
-                          physician.status === "verified" ? "bg-green-50 text-green-600 border border-green-200" :
-                          physician.status === "flagged" ? "bg-red-50 text-red-600 border border-red-200" :
-                          "bg-amber-50 text-amber-600 border border-amber-200"
-                        )}>
-                          {physician.status}
-                        </span>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{physician.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
 
@@ -552,7 +510,7 @@ export default function CaseDetailPage() {
         </div>
 
         {/* Right Pane: Document List + Document Viewer */}
-        <div className="flex flex-col gap-4">
+        <div className="lg:col-span-3 flex flex-col gap-4">
           {/* Document list for Tab 2 */}
           <div className="rounded-xl border border-acme-border bg-white p-4">
             <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Documents</h3>
