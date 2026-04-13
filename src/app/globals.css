@@ -75,9 +75,13 @@ body {
 }
 .spin-slow { animation: spin-slow 3s linear infinite; }
 
-/* Scale entire UI down on desktop to match 80% zoom appearance at 100% zoom */
+/* Scale main content down on desktop to match 80% zoom appearance at 100% zoom */
 @media (min-width: 1024px) {
-  html { zoom: 0.85; }
+  main {
+    zoom: 0.85;
+    /* Compensate margin-left: sidebar is 256px fixed, zoom scales margin so we need 256/0.85 ≈ 301px */
+    margin-left: calc(16rem / 0.85) !important;
+  }
 }
 
 @layer utilities {
