@@ -61,7 +61,7 @@ export default function HomePage() {
           scoreChange: { from: 0, to: 0 },
         },
       ],
-      summary: "New claim \u2014 pending initial AI assessment and document upload.",
+      summary: "New claim — pending initial AI assessment and document upload.",
       riskIndicators: ["INFO: Awaiting initial document upload and AI scoring"],
       recommendedAction: "Upload initial documentation to begin AI assessment.",
       filingDate: dateStr,
@@ -87,7 +87,7 @@ export default function HomePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-acme-teal">Global Triage Command Center</h1>
-          <p className="text-sm text-gray-500 mt-1">AI-powered claims complexity engine \u2014 operational overview</p>
+          <p className="text-sm text-gray-500 mt-1">AI-powered claims complexity engine — operational overview</p>
         </div>
         <div className="flex items-center gap-3">
           <button

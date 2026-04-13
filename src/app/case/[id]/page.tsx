@@ -6,10 +6,10 @@ import RiskThermometer from "@/components/ui/RiskThermometer";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import {
-  ArrowLeft, Upload, FileText, AlertTriangle, CheckCircle2, Clock,
-  Brain, Eye, ChevronRight, RotateCcw, Loader2, History,
+  ArrowLeft, FileText, AlertTriangle, CheckCircle2, Clock,
+  Brain, Eye, ChevronRight, Loader2, History,
   Stethoscope, Shield, FileSearch, Code, FileType,
   ClipboardList, Download, ExternalLink, Image as ImageIcon,
   FileSpreadsheet, Activity, ZoomIn, ZoomOut, Plus
@@ -50,45 +50,16 @@ export default function CaseDetailPage() {
   const cases = useClaimsStore((s) => s.cases);
   const isLoading = useClaimsStore((s) => s.isLoading);
   const isInitialized = useClaimsStore((s) => s.isInitialized);
-  const semanticLog = useClaimsStore((s) => s.semanticLog);
-  const dropPhase = useClaimsStore((s) => s.dropPhase);
-  const isProcessing = useClaimsStore((s) => s.isProcessing);
   const activeDocumentId = useClaimsStore((s) => s.activeDocumentId);
-  const triggerDocumentDrop = useClaimsStore((s) => s.triggerDocumentDrop);
-  const resetDropPhase = useClaimsStore((s) => s.resetDropPhase);
   const setActiveDocument = useClaimsStore((s) => s.setActiveDocument);
 
-  const [isDragOver, setIsDragOver] = useState(false);
   const [showAudit, setShowAudit] = useState(false);
   const [mainTab, setMainTab] = useState<MainTab>("overview");
   const [docViewTab, setDocViewTab] = useState<DocViewTab>("original");
   const [imageZoom, setImageZoom] = useState(100);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const logEndRef = useRef<HTMLDivElement>(null);
-
   const currentCase = cases.find((c) => c.id === caseId);
-
-  useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [semanticLog]);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setIsDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    if (caseId === "case-002") {
-      triggerDocumentDrop();
-    }
-  }, [caseId, triggerDocumentDrop]);
 
   if (!currentCase) {
     if (isLoading || !isInitialized) {
@@ -115,7 +86,6 @@ export default function CaseDetailPage() {
 
   // TypeScript now knows caseData is non-null after the guard above
   const caseData = currentCase;
-  const isHargrove = caseId === "case-002";
   const activeDoc = caseData.documents.find((d) => d.id === activeDocumentId);
   const currentStage = getLifecycleStage(caseData.status);
 
@@ -605,38 +575,6 @@ export default function CaseDetailPage() {
           </div>
 
           {/* AI Semantic Log for Hargrove - moved from Tab 1 */}
-          {isHargrove && (
-            <div className="rounded-xl border border-acme-border bg-acme-dark overflow-hidden">
-              <div className="px-4 py-3 border-b border-acme-border flex items-center gap-2">
-                <Brain className="w-3.5 h-3.5 text-acme-orange" />
-                <h3 className="text-xs font-semibold text-white uppercase tracking-wider">AI Semantic Log</h3>
-                {isProcessing && <Loader2 className="w-3 h-3 text-acme-orange spin-slow ml-auto" />}
-              </div>
-              <div className="terminal-log p-4 max-h-[200px] overflow-y-auto bg-acme-navy/80">
-                {semanticLog.length === 0 ? (
-                  <p className="text-acme-muted text-xs">Drop a file to begin analysis...</p>
-                ) : (
-                  semanticLog.map((entry, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * (i % 10) }} className="py-0.5">
-                      <span className={cn(
-                        "font-bold",
-                        entry.type === "SCAN" && "text-blue-400",
-                        entry.type === "EXTRACT" && "text-cyan-400",
-                        entry.type === "ENGINE" && "text-acme-orange",
-                        entry.type === "RULES" && "text-purple-400",
-                        entry.type === "ALERT" && "text-red-400",
-                        entry.type === "MATCH" && "text-green-400",
-                      )}>
-                        [{entry.type}]
-                      </span>
-                      <span className="text-slate-400 ml-1">{entry.message}</span>
-                    </motion.div>
-                  ))
-                )}
-                <div ref={logEndRef} />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right Pane: Document List + Document Viewer */}
@@ -704,23 +642,13 @@ export default function CaseDetailPage() {
               <span className={cn("text-xs font-bold px-2 py-0.5 rounded", caseData.complexityScore <= 30 ? "bg-green-50 text-green-700" : caseData.complexityScore <= 60 ? "bg-amber-50 text-amber-700" : caseData.complexityScore <= 80 ? "bg-acme-orange/10 text-acme-orange" : "bg-red-50 text-red-700")}>
                 Score: {caseData.complexityScore}/100
               </span>
-              {isHargrove && dropPhase > 0 && (
-                <span className="text-[10px] px-2 py-0.5 rounded bg-acme-orange/10 text-acme-orange border border-acme-orange/20 font-mono">
-                  Phase {dropPhase}/4
-                </span>
-              )}
             </div>
             <p className="text-sm text-gray-500 mt-0.5">
-              {caseData.policyNumber} {"\u2014"} {caseData.diagnosis}
+              {caseData.policyNumber} — {caseData.diagnosis}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {isHargrove && dropPhase > 0 && (
-            <button onClick={resetDropPhase} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-acme-border text-xs text-gray-500 hover:text-gray-900 transition-colors">
-              <RotateCcw className="w-3.5 h-3.5" /> Reset Demo
-            </button>
-          )}
           <button onClick={() => setShowAudit(!showAudit)} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors", showAudit ? "bg-orange-50 border-acme-orange/30 text-acme-orange" : "bg-gray-50 border-acme-border text-gray-500 hover:text-gray-900")}>
             <History className="w-3.5 h-3.5" /> Audit Trail
           </button>
@@ -855,40 +783,6 @@ export default function CaseDetailPage() {
 
               {/* Left: Documents List + Upload Zone */}
               <div className="col-span-5 space-y-4">
-                {/* Drop Zone for Hargrove demo */}
-                {isHargrove && (
-                  <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    className={cn(
-                      "rounded-xl border-2 border-dashed p-6 text-center transition-all duration-300",
-                      isDragOver ? "drop-zone-active border-acme-orange bg-acme-orange/5" : "border-acme-border hover:border-acme-muted",
-                      isProcessing && "opacity-50 pointer-events-none",
-                      dropPhase >= 4 && "opacity-40 pointer-events-none"
-                    )}
-                  >
-                    {isProcessing ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="w-8 h-8 text-acme-orange spin-slow" />
-                        <p className="text-xs text-acme-orange font-medium">AI Processing...</p>
-                      </div>
-                    ) : dropPhase >= 4 ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <CheckCircle2 className="w-8 h-8 text-green-400" />
-                        <p className="text-xs text-green-600 font-medium">All documents ingested</p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <Upload className={cn("w-8 h-8", isDragOver ? "text-acme-orange" : "text-gray-400")} />
-                        <p className={cn("text-xs font-medium", isDragOver ? "text-acme-orange" : "text-gray-400")}>
-                          {isDragOver ? "Release to analyze" : "Drop file to trigger Day " + (dropPhase < 4 ? [2, 4, 5, 5][dropPhase] : "\u2014")}
-                        </p>
-                        <p className="text-[10px] text-gray-400">Drag any file to simulate ingestion</p>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* Document List */}
                 <div className="rounded-xl border border-acme-border bg-white p-4">
@@ -955,26 +849,19 @@ export default function CaseDetailPage() {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    {caseData.documents.map((doc, i) => {
-                      const isIngested = isHargrove ? i < dropPhase : true;
-                      return (
-                        <div
-                          key={doc.id}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-                            !isIngested && "opacity-40",
-                            "hover:bg-gray-50"
-                          )}
-                        >
-                          {getDocIcon(doc)}
-                          <div className="flex-1 min-w-0">
-                            <span className="text-xs font-medium text-gray-700 truncate block">{doc.name}</span>
-                            <span className="text-[10px] text-gray-400">Day {doc.day}</span>
-                          </div>
-                          <StatusBadge status={doc.status} />
+                    {caseData.documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:bg-gray-50"
+                      >
+                        {getDocIcon(doc)}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-medium text-gray-700 truncate block">{doc.name}</span>
+                          <span className="text-[10px] text-gray-400">Day {doc.day}</span>
                         </div>
-                      );
-                    })}
+                        <StatusBadge status={doc.status} />
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -1007,7 +894,7 @@ export default function CaseDetailPage() {
                             <p className={cn("text-xs", colors.text === "text-gray-600" ? "text-gray-600" : colors.text)}>{entry.detail}</p>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-[10px] text-gray-400">{new Date(entry.timestamp).toLocaleString()}</span>
-                              {entry.user && <span className="text-[10px] text-gray-400">{"\u2014"} {entry.user}</span>}
+                              {entry.user && <span className="text-[10px] text-gray-400">— {entry.user}</span>}
                             </div>
                           </div>
                         </div>

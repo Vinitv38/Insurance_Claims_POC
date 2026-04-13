@@ -421,7 +421,7 @@ export default function ConfiguratorPage() {
                           </div>
                         ) : (
                           <span className="text-xs font-mono px-2 py-1 rounded bg-gray-100 text-gray-700">
-                            {skill.minScore} \u2014 {skill.maxScore}
+                            {skill.minScore} — {skill.maxScore}
                           </span>
                         )}
                       </td>

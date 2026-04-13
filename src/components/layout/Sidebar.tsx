@@ -61,7 +61,7 @@ export default function Sidebar() {
           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse-glow" />
           <span className="text-[10px] text-white/50">AI Engine: Online</span>
         </div>
-        <p className="text-[10px] text-white/30 mt-1">v2.4.1 \u2014 Logic Apps Connected</p>
+        <p className="text-[10px] text-white/30 mt-1">v2.4.1 — Logic Apps Connected</p>
       </div>
     </aside>
   );

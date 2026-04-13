@@ -49,7 +49,7 @@ export default function CasesTable() {
       <div className="px-5 py-4 border-b border-acme-border flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-acme-teal">Active Claims Queue</h3>
-          <p className="text-xs text-gray-500 mt-0.5">Real-time triage overview \u2014 click any row for detail</p>
+          <p className="text-xs text-gray-500 mt-0.5">Real-time triage overview — click any row for detail</p>
         </div>
         <div className="flex items-center gap-2">
           <select
