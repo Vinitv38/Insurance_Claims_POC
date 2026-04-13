@@ -11,6 +11,7 @@
   "dependencies": {
     "@azure-rest/ai-document-intelligence": "^1.1.0",
     "@supabase/supabase-js": "^2.103.0",
+    "@tailwindcss/typography": "^0.5.19",
     "@tremor/react": "^3.18.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
