@@ -33,24 +33,24 @@ export default function MetricCard({ title, value, subtitle, icon: Icon, trend, 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className={cn(
-        "relative overflow-hidden rounded-xl border bg-white p-3 lg:p-4 xl:p-5",
+        "relative overflow-hidden rounded-xl border bg-white p-4 xl:p-5",
         colors.border,
         className
       )}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-[10px] lg:text-xs font-medium text-gray-500 uppercase tracking-wider">{title}</p>
-          <p className={cn("text-2xl lg:text-3xl font-bold mt-1", colors.text)}>{value}</p>
-          {subtitle && <p className="text-[10px] lg:text-xs text-gray-500 mt-1">{subtitle}</p>}
+          <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">{title}</p>
+          <p className={cn("text-3xl font-bold mt-1", colors.text)}>{value}</p>
+          {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
           {trend && (
             <p className={cn("text-xs font-medium mt-2", trend.positive ? "text-green-600" : "text-red-600")}>
               {trend.positive ? "+" : ""}{trend.value}
             </p>
           )}
         </div>
-        <div className={cn("flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 rounded-lg", colors.bg)}>
-          <Icon className={cn("w-4 h-4 lg:w-5 lg:h-5", colors.icon)} />
+        <div className={cn("flex items-center justify-center w-10 h-10 rounded-lg", colors.bg)}>
+          <Icon className={cn("w-5 h-5", colors.icon)} />
         </div>
       </div>
       <div className={cn("absolute bottom-0 left-0 right-0 h-0.5", colors.bg)} />

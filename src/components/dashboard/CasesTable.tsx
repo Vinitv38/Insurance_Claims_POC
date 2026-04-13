@@ -87,28 +87,28 @@ export default function CasesTable() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-acme-border bg-[#F0F7F8]">
-              <th className="px-3 lg:px-4 xl:px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Claimant</th>
-              <th className="px-3 lg:px-4 xl:px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Policy</th>
-              <th className="px-3 lg:px-4 xl:px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-3 lg:px-4 xl:px-5 py-2.5 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Score</th>
-              <th className="px-3 lg:px-4 xl:px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-3 lg:px-4 xl:px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Assigned</th>
-              <th className="px-3 lg:px-4 xl:px-5 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Updated</th>
-              <th className="px-3 lg:px-4 xl:px-5 py-2.5 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider"></th>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Claimant</th>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Policy</th>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+              <th className="px-4 py-3 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Score</th>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Assigned</th>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Updated</th>
+              <th className="px-4 py-3 text-center text-[10px] font-semibold text-gray-500 uppercase tracking-wider"></th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <tr key={`skeleton-${i}`} className="border-b border-acme-border/50 animate-pulse">
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5"><div className="h-4 bg-gray-200 rounded w-32" /></td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5"><div className="h-4 bg-gray-200 rounded w-28" /></td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5"><div className="h-4 bg-gray-200 rounded w-24" /></td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5 text-center"><div className="h-7 bg-gray-200 rounded w-12 mx-auto" /></td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5"><div className="h-5 bg-gray-200 rounded w-20" /></td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5"><div className="h-4 bg-gray-200 rounded w-24" /></td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5"><div className="h-4 bg-gray-200 rounded w-20" /></td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5"><div className="h-4 bg-gray-200 rounded w-4 mx-auto" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-32" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-28" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-24" /></td>
+                  <td className="px-4 py-3 text-center"><div className="h-7 bg-gray-200 rounded w-12 mx-auto" /></td>
+                  <td className="px-4 py-3"><div className="h-5 bg-gray-200 rounded w-20" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-24" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-20" /></td>
+                  <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded w-4 mx-auto" /></td>
                 </tr>
               ))
             ) : filteredCases.length === 0 ? (
@@ -134,39 +134,39 @@ export default function CasesTable() {
                     c.status === "closed" && "border-l-2 border-l-gray-400/40",
                   )}
                 >
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5">
+                  <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {c.status === "escalated" && <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
                       {c.status === "auto_approved" && <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
                       {(c.status === "in_review" || c.status === "pending") && <Clock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
                       {c.status === "closed" && <CheckCircle2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
-                      <span className="text-xs lg:text-sm font-medium text-gray-900">{c.claimantName}</span>
+                      <span className="text-sm font-medium text-gray-900">{c.claimantName}</span>
                     </div>
                   </td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5">
-                    <span className="text-[10px] lg:text-xs font-mono text-gray-500">{c.policyNumber}</span>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-mono text-gray-500">{c.policyNumber}</span>
                   </td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5">
-                    <span className="text-[10px] lg:text-xs text-gray-500">{c.claimType}</span>
+                  <td className="px-4 py-3">
+                    <span className="text-xs text-gray-500">{c.claimType}</span>
                   </td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5 text-center">
-                    <span className={cn("inline-flex items-center justify-center w-10 h-6 lg:w-12 lg:h-7 rounded-md text-[10px] lg:text-xs font-bold", getScoreColor(c.complexityScore), getScoreBg(c.complexityScore))}>
+                  <td className="px-4 py-3 text-center">
+                    <span className={cn("inline-flex items-center justify-center w-12 h-7 rounded-md text-xs font-bold", getScoreColor(c.complexityScore), getScoreBg(c.complexityScore))}>
                       {c.complexityScore}
                     </span>
                   </td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5">
+                  <td className="px-4 py-3">
                     <StatusBadge status={c.status} />
                   </td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5">
+                  <td className="px-4 py-3">
                     <div>
-                      <p className="text-[10px] lg:text-xs text-gray-700">{c.assignedTo}</p>
-                      <p className="text-[9px] lg:text-[10px] text-gray-500">{c.assignedGroup}</p>
+                      <p className="text-xs text-gray-700">{c.assignedTo}</p>
+                      <p className="text-[10px] text-gray-500">{c.assignedGroup}</p>
                     </div>
                   </td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5">
-                    <span className="text-[10px] lg:text-xs text-gray-500">{c.lastUpdated}</span>
+                  <td className="px-4 py-3">
+                    <span className="text-xs text-gray-500">{c.lastUpdated}</span>
                   </td>
-                  <td className="px-3 lg:px-4 xl:px-5 py-2.5 text-center">
+                  <td className="px-4 py-3 text-center">
                     <ExternalLink className="w-3.5 h-3.5 text-acme-muted hover:text-acme-orange transition-colors" />
                   </td>
                 </motion.tr>
