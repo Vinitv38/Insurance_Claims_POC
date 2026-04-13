@@ -86,8 +86,7 @@ export default function HomePage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-acme-teal">Global Triage Command Center</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">AI-powered claims complexity engine — operational overview</p>
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-acme-teal">Global Triage Dashboard</h1>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <button
@@ -116,7 +115,7 @@ export default function HomePage() {
         <MetricCard
           title="Straight-Through Processing %"
           value={isLoading ? "—" : `${stpRate}%`}
-          subtitle="Auto-approved without manual review"
+          subtitle="Claims processed with human-in-loop review"
           icon={Zap}
           color="green"
           trend={{ value: "3.2% improvement", positive: true }}

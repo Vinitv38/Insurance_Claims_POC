@@ -12,7 +12,7 @@ import {
   Brain, Eye, ChevronRight, Loader2,
   Stethoscope, Shield, FileSearch, Code, FileType,
   ClipboardList, Download, ExternalLink, Image as ImageIcon,
-  FileSpreadsheet, Activity, ZoomIn, ZoomOut, Plus
+  FileSpreadsheet, ZoomIn, ZoomOut, Plus, Play, History
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
 import { uploadDocumentFile, insertDocument, updateDocumentMarkdown } from "@/lib/supabase-api";
@@ -20,7 +20,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 
-type MainTab = "overview" | "decision";
+type MainTab = "overview" | "decision" | "audit";
 type DocViewTab = "original" | "schema" | "interpreted";
 
 const LIFECYCLE_STAGES = [
@@ -57,6 +57,7 @@ export default function CaseDetailPage() {
   const [docViewTab, setDocViewTab] = useState<DocViewTab>("original");
   const [imageZoom, setImageZoom] = useState(100);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
 
@@ -76,7 +77,7 @@ export default function CaseDetailPage() {
         <div className="text-center">
           <p className="text-lg text-gray-500">Case not found</p>
           <button onClick={() => router.push("/")} className="mt-4 text-acme-orange hover:underline text-sm">
-            Return to Command Center
+            Return to Home
           </button>
         </div>
       </div>
@@ -348,8 +349,8 @@ export default function CaseDetailPage() {
 
           {docViewTab === "schema" && (
             <motion.div key="schema" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto max-h-[calc(100vh-320px)]">
-                <pre className="text-[11px] text-green-400 font-mono leading-relaxed whitespace-pre-wrap">
+              <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 overflow-auto max-h-[calc(100vh-320px)]">
+                <pre className="text-[11px] text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
                   {doc.jsonSchema ? JSON.stringify(doc.jsonSchema, null, 2) : "No JSON schema available for this document."}
                 </pre>
               </div>
@@ -419,19 +420,19 @@ export default function CaseDetailPage() {
     );
   }
 
-  /* Decision Tab - AI Summary + Document Viewer + Complexity Vectors */
+  /* Decision Tab - AI Summary + Complexity Vectors (no document viewer - moved to overview tab) */
   function renderDecisionTab() {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
-        {/* Left Pane: AI Decision Summary + Complexity Vectors */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        {/* Left Pane: AI Decision Summary */}
+        <div className="lg:col-span-2">
+          <div className="rounded-xl border border-acme-border bg-white overflow-hidden">
             <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
               <Brain className="w-4 h-4 text-acme-orange" />
               <h2 className="text-sm font-semibold text-acme-teal">AI Decision Summary</h2>
               <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">AUTO-GENERATED</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+            <div className="p-5 space-y-6">
               {/* Clinical Synopsis */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -495,11 +496,13 @@ export default function CaseDetailPage() {
 
             </div>
           </div>
+        </div>
 
-          {/* Complexity Vectors */}
+        {/* Right Pane: Complexity Vectors */}
+        <div className="lg:col-span-1 space-y-4">
           <div className="rounded-xl border border-acme-border bg-white p-4">
             <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Complexity Vectors</h3>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            <div className="space-y-3">
               <RiskThermometer label="Clinical" value={caseData.vectors.clinical} subscript="V_c" />
               <RiskThermometer label="Documentation" value={caseData.vectors.documentation} subscript="V_d" />
               <RiskThermometer label="Discrepancy" value={caseData.vectors.discrepancy} subscript="V_i" />
@@ -507,51 +510,26 @@ export default function CaseDetailPage() {
             </div>
           </div>
 
-        </div>
-
-        {/* Right Pane: Document List + Document Viewer */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
-          {/* Document list for Tab 2 */}
+          {/* Document Summary */}
           <div className="rounded-xl border border-acme-border bg-white p-4">
-            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Documents</h3>
-            <div className="space-y-1 max-h-[140px] overflow-y-auto">
-              {caseData.documents.map((doc) => (
-                <button
-                  key={doc.id}
-                  onClick={() => { setActiveDocument(doc.id === activeDocumentId ? null : doc.id); setDocViewTab("original"); }}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors text-xs",
-                    doc.id === activeDocumentId ? "bg-orange-50 border border-acme-orange/20" : "hover:bg-gray-50"
-                  )}
-                >
-                  {getDocIcon(doc)}
-                  <span className="flex-1 truncate text-gray-700">{doc.name}</span>
-                  <StatusBadge status={doc.status} />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Document Viewer with 3 tabs - expands to fill remaining space */}
-          <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col flex-1">
-            <div className="px-4 py-3 border-b border-acme-border flex items-center gap-2">
-              <Eye className="w-3.5 h-3.5 text-acme-orange" />
-              <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Document Viewer</h3>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto">
-              <AnimatePresence mode="wait">
-                {activeDoc ? (
-                  <motion.div key={activeDoc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full">
-                    {renderDocumentViewer(activeDoc)}
-                  </motion.div>
-                ) : (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center min-h-[400px] h-full text-gray-400">
-                    <FileText className="w-8 h-8 mb-2 opacity-30" />
-                    <p className="text-xs">Select a document to view</p>
-                    <p className="text-[10px] text-gray-400 mt-1">View original, JSON schema, or AI interpretation</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Document Summary</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-[10px] text-gray-500">Total Documents</span>
+                <span className="text-sm font-bold text-gray-900">{caseData.documents.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[10px] text-gray-500">Processed</span>
+                <span className="text-sm font-bold text-green-600">{caseData.documents.filter(d => d.status === "processed").length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[10px] text-gray-500">Flagged</span>
+                <span className="text-sm font-bold text-red-600">{caseData.documents.filter(d => d.status === "flagged").length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[10px] text-gray-500">Pending</span>
+                <span className="text-sm font-bold text-blue-600">{caseData.documents.filter(d => d.status === "pending").length}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -580,6 +558,12 @@ export default function CaseDetailPage() {
             </p>
           </div>
         </div>
+        <button
+          onClick={() => alert("Trigger Analysis: Processing " + selectedDocs.size + " selected document(s) for case " + caseData.id)}
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-acme-orange text-white text-xs sm:text-sm font-medium hover:bg-acme-orange/90 transition-colors flex-shrink-0"
+        >
+          <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Trigger Analysis
+        </button>
       </div>
 
       {/* Main Tab Switcher */}
@@ -595,6 +579,12 @@ export default function CaseDetailPage() {
           className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", mainTab === "decision" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
         >
           <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> AI Decision Summary
+        </button>
+        <button
+          onClick={() => setMainTab("audit")}
+          className={cn("flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap", mainTab === "audit" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+        >
+          <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Audit History
         </button>
       </div>
 
@@ -708,13 +698,11 @@ export default function CaseDetailPage() {
             {/* ===== RECOMMENDED NEXT STEPS ===== */}
             {renderRecommendedAction()}
 
-            {/* ===== MAIN CONTENT: Documents + Recent Activities ===== */}
+            {/* ===== MAIN CONTENT: Documents List (left) + Document Viewer (right) ===== */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
 
-              {/* Left: Documents List + Upload Zone */}
-              <div className="lg:col-span-5 space-y-4">
-
-                {/* Document List */}
+              {/* Left: Documents List with Checkboxes + Upload */}
+              <div className="lg:col-span-4 space-y-4">
                 <div className="rounded-xl border border-acme-border bg-white p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Documents ({caseData.documents.length})</h3>
@@ -782,8 +770,27 @@ export default function CaseDetailPage() {
                     {caseData.documents.map((doc) => (
                       <div
                         key={doc.id}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:bg-gray-50"
+                        onClick={() => { setActiveDocument(doc.id === activeDocumentId ? null : doc.id); setDocViewTab("original"); }}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer",
+                          doc.id === activeDocumentId ? "bg-orange-50 border border-acme-orange/20" : "hover:bg-gray-50"
+                        )}
                       >
+                        <input
+                          type="checkbox"
+                          checked={selectedDocs.has(doc.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setSelectedDocs(prev => {
+                              const next = new Set(prev);
+                              if (next.has(doc.id)) next.delete(doc.id);
+                              else next.add(doc.id);
+                              return next;
+                            });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-3.5 h-3.5 rounded border-gray-300 text-acme-orange focus:ring-acme-orange/50 flex-shrink-0 cursor-pointer"
+                        />
                         {getDocIcon(doc)}
                         <div className="flex-1 min-w-0">
                           <span className="text-xs font-medium text-gray-700 truncate block">{doc.name}</span>
@@ -794,48 +801,73 @@ export default function CaseDetailPage() {
                     ))}
                   </div>
                 </div>
-
               </div>
 
-              {/* Right: Recent Activities */}
-              <div className="lg:col-span-7 space-y-4">
-                <div className="rounded-xl border border-acme-border bg-white p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Activity className="w-4 h-4 text-acme-orange" />
-                    <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Recent Activities</h3>
+              {/* Right: Document Viewer */}
+              <div className="lg:col-span-8">
+                <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col" style={{ minHeight: 'calc(100vh - 420px)' }}>
+                  <div className="px-4 py-3 border-b border-acme-border flex items-center gap-2">
+                    <Eye className="w-3.5 h-3.5 text-acme-orange" />
+                    <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Document Viewer</h3>
                   </div>
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                    {caseData.auditHistory.slice().reverse().map((entry, i) => {
-                      const colors = getActivityColor(entry.action);
-                      return (
-                        <div key={i} className={cn("flex items-start gap-3 p-3 rounded-lg border transition-colors", colors.bg, colors.border)}>
-                          <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", colors.dot)} />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className={cn("text-[10px] font-bold uppercase tracking-wider", colors.text)}>{entry.action}</span>
-                              {entry.scoreChange && (
-                                <span className="text-[10px] font-mono text-acme-orange">
-                                  {entry.scoreChange.from} {"\u2192"} {entry.scoreChange.to}
-                                </span>
-                              )}
-                            </div>
-                            <p className={cn("text-xs", colors.text === "text-gray-600" ? "text-gray-600" : colors.text)}>{entry.detail}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] text-gray-400">{new Date(entry.timestamp).toLocaleString()}</span>
-                              {entry.user && <span className="text-[10px] text-gray-400">— {entry.user}</span>}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="p-4 flex-1 overflow-y-auto">
+                    <AnimatePresence mode="wait">
+                      {activeDoc ? (
+                        <motion.div key={activeDoc.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="h-full">
+                          {renderDocumentViewer(activeDoc)}
+                        </motion.div>
+                      ) : (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center min-h-[300px] h-full text-gray-400">
+                          <FileText className="w-8 h-8 mb-2 opacity-30" />
+                          <p className="text-xs">Select a document to view</p>
+                          <p className="text-[10px] text-gray-400 mt-1">View original, JSON schema, or AI interpretation</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
             </div>
           </motion.div>
-        ) : (
+        ) : mainTab === "decision" ? (
           <motion.div key="decision" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             {renderDecisionTab()}
+          </motion.div>
+        ) : (
+          <motion.div key="audit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {/* Audit History Tab */}
+            <div className="rounded-xl border border-acme-border bg-white p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <History className="w-4 h-4 text-acme-orange" />
+                <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Audit History</h3>
+                <span className="ml-auto text-[10px] text-gray-400">{caseData.auditHistory.length} entries</span>
+              </div>
+              <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
+                {caseData.auditHistory.slice().reverse().map((entry, i) => {
+                  const colors = getActivityColor(entry.action);
+                  return (
+                    <div key={i} className={cn("flex items-start gap-3 p-3 rounded-lg border transition-colors", colors.bg, colors.border)}>
+                      <div className={cn("w-2 h-2 rounded-full mt-1.5 flex-shrink-0", colors.dot)} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className={cn("text-[10px] font-bold uppercase tracking-wider", colors.text)}>{entry.action}</span>
+                          {entry.scoreChange && (
+                            <span className="text-[10px] font-mono text-acme-orange">
+                              {entry.scoreChange.from} {"\u2192"} {entry.scoreChange.to}
+                            </span>
+                          )}
+                        </div>
+                        <p className={cn("text-xs", colors.text === "text-gray-600" ? "text-gray-600" : colors.text)}>{entry.detail}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] text-gray-400">{new Date(entry.timestamp).toLocaleString()}</span>
+                          {entry.user && <span className="text-[10px] text-gray-400">— {entry.user}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
