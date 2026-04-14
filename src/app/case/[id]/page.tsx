@@ -148,7 +148,7 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="rounded-lg border border-acme-border bg-gray-50 overflow-auto max-h-[calc(100vh-280px)] flex items-center justify-center p-4">
+            <div className="rounded-lg border border-acme-border bg-gray-50 overflow-auto flex items-center justify-center p-4" style={{ maxHeight: 'calc(100vh - 260px)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={doc.filePath}
@@ -176,8 +176,9 @@ export default function CaseDetailPage() {
               </div>
             </div>
             <iframe
-              src={doc.filePath}
-              className="w-full h-[calc(100vh-280px)] rounded-lg border border-acme-border bg-white"
+              src={doc.filePath + "#view=FitH"}
+              className="w-full rounded-lg border border-acme-border bg-white"
+              style={{ height: 'calc(100vh - 260px)' }}
               title={doc.name}
             />
           </div>
@@ -198,7 +199,7 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed max-h-[calc(100vh-280px)] overflow-y-auto">
+            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
               {doc.extractedText?.split("\n").map((line, i) => {
                 const isHighlighted = line.includes("MISSING") || line.includes("FAILED") || line.includes("CRITICAL") || line.includes("CONTRADICTION") || line.includes("wheelchair") || line.includes("HANDWRITTEN") || line.includes("OCR") || line.includes("SENTIMENT");
                 return (
@@ -226,7 +227,7 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto max-h-[calc(100vh-280px)]">
+            <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
               <pre className="text-[11px] text-cyan-400 font-mono leading-relaxed whitespace-pre-wrap">
                 {doc.extractedText || "Loading JSON content..."}
               </pre>
@@ -249,7 +250,7 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed max-h-[calc(100vh-280px)] overflow-y-auto">
+            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
               {doc.extractedText?.split("\n").map((line, i) => (
                 <div key={i} className="py-0.5">{line}</div>
               ))}
@@ -349,7 +350,7 @@ export default function CaseDetailPage() {
 
           {docViewTab === "schema" && (
             <motion.div key="schema" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 overflow-auto max-h-[calc(100vh-320px)]">
+              <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 overflow-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <pre className="text-[11px] text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
                   {doc.jsonSchema ? JSON.stringify(doc.jsonSchema, null, 2) : "No JSON schema available for this document."}
                 </pre>
@@ -360,7 +361,7 @@ export default function CaseDetailPage() {
           {docViewTab === "interpreted" && (
             <motion.div key="interpreted" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {doc.aiInterpretedMd ? (
-                <div className="prose prose-sm max-w-none max-h-[calc(100vh-320px)] overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
+                <div className="prose prose-sm max-w-none overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50" style={{ maxHeight: 'calc(100vh - 260px)' }}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {doc.aiInterpretedMd}
                   </ReactMarkdown>
@@ -805,7 +806,7 @@ export default function CaseDetailPage() {
 
               {/* Right: Document Viewer */}
               <div className="lg:col-span-8">
-                <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col" style={{ minHeight: 'calc(100vh - 420px)' }}>
+                <div className="rounded-xl border border-acme-border bg-white overflow-hidden flex flex-col" style={{ minHeight: 'calc(100vh - 340px)' }}>
                   <div className="px-4 py-3 border-b border-acme-border flex items-center gap-2">
                     <Eye className="w-3.5 h-3.5 text-acme-orange" />
                     <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Document Viewer</h3>
@@ -842,7 +843,7 @@ export default function CaseDetailPage() {
                 <h3 className="text-xs font-semibold text-acme-teal uppercase tracking-wider">Audit History</h3>
                 <span className="ml-auto text-[10px] text-gray-400">{caseData.auditHistory.length} entries</span>
               </div>
-              <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div className="space-y-2">
                 {caseData.auditHistory.slice().reverse().map((entry, i) => {
                   const colors = getActivityColor(entry.action);
                   return (
