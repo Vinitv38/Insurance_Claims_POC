@@ -444,7 +444,7 @@ const auditHistory = [
   { claim_id: "case-001", timestamp: "2026-04-04T10:00:00Z", action: "DOC_UPLOADED", detail: "Claimant_Personal_Statement_HW_040426.pdf \u2014 Handwriting OCR processed at 87% confidence", user_name: "System" },
   { claim_id: "case-001", timestamp: "2026-04-05T11:00:00Z", action: "DOC_UPLOADED", detail: "PCP_Medical_Records_040526.pdf processed \u2014 All documentation complete", user_name: "System" },
   { claim_id: "case-001", timestamp: "2026-04-05T11:01:00Z", action: "AI_SCORING", detail: "Final score: 15/100 \u2014 Low complexity", score_change_from: 14, score_change_to: 15 },
-  { claim_id: "case-001", timestamp: "2026-04-05T11:02:00Z", action: "AUTO_APPROVED", detail: "Claim auto-approved via STP engine. Routed to Junior Adjuster for final sign-off.", user_name: "AI Engine" },
+  { claim_id: "case-001", timestamp: "2026-04-05T11:02:00Z", action: "APPROVED", detail: "Claim approved after human-based review. Routed to Junior Adjuster for final sign-off.", user_name: "AI Engine" },
   // Hargrove
   { claim_id: "case-002", timestamp: "2026-04-10T08:00:00Z", action: "CLAIM_CREATED", detail: "New LTC claim initiated \u2014 high-acuity intake", user_name: "System" },
   { claim_id: "case-002", timestamp: "2026-04-10T08:01:00Z", action: "AI_SCORING", detail: "Initial complexity score: 35/100", score_change_from: 0, score_change_to: 35 },
@@ -483,7 +483,7 @@ const auditHistory = [
   { claim_id: "case-006", timestamp: "2026-04-06T09:01:00Z", action: "AI_SCORING", detail: "Initial complexity score: 18/100", score_change_from: 0, score_change_to: 18 },
   { claim_id: "case-006", timestamp: "2026-04-07T10:00:00Z", action: "DOC_UPLOADED", detail: "Neurologist_Report processed \u2014 ALS confirmed", user_name: "System" },
   { claim_id: "case-006", timestamp: "2026-04-07T10:01:00Z", action: "AI_SCORING", detail: "Score updated: clear clinical picture", score_change_from: 18, score_change_to: 22 },
-  { claim_id: "case-006", timestamp: "2026-04-08T08:00:00Z", action: "AUTO_APPROVED", detail: "Claim auto-approved \u2014 progressive terminal diagnosis, complete documentation", user_name: "AI Engine" },
+  { claim_id: "case-006", timestamp: "2026-04-08T08:00:00Z", action: "APPROVED", detail: "Claim approved after human-based review \u2014 progressive terminal diagnosis, complete documentation", user_name: "AI Engine" },
   // Voss
   { claim_id: "case-007", timestamp: "2026-04-05T10:00:00Z", action: "CLAIM_CREATED", detail: "New A&H claim initiated \u2014 workplace fall", user_name: "System" },
   { claim_id: "case-007", timestamp: "2026-04-05T10:01:00Z", action: "AI_SCORING", detail: "Initial complexity score: 42/100", score_change_from: 0, score_change_to: 42 },
@@ -501,12 +501,12 @@ const auditHistory = [
   { claim_id: "case-008", timestamp: "2026-03-20T09:01:00Z", action: "AI_SCORING", detail: "Initial complexity score: 15/100", score_change_from: 0, score_change_to: 15 },
   { claim_id: "case-008", timestamp: "2026-03-25T10:00:00Z", action: "DOC_UPLOADED", detail: "PCP_Records processed \u2014 MMSE 12/30", user_name: "System" },
   { claim_id: "case-008", timestamp: "2026-03-25T10:01:00Z", action: "AI_SCORING", detail: "Score updated after PCP records", score_change_from: 15, score_change_to: 18 },
-  { claim_id: "case-008", timestamp: "2026-04-01T08:00:00Z", action: "AUTO_APPROVED", detail: "Claim auto-approved \u2014 straightforward dementia case", user_name: "AI Engine" },
+  { claim_id: "case-008", timestamp: "2026-04-01T08:00:00Z", action: "APPROVED", detail: "Claim approved after human-based review \u2014 straightforward dementia case", user_name: "AI Engine" },
   { claim_id: "case-008", timestamp: "2026-04-02T09:00:00Z", action: "CLAIM_CLOSED", detail: "Claim closed \u2014 benefits initiated", user_name: "Sarah Mitchell" },
 ];
 
 const skillSets = [
-  { id: "skill-1", name: "Junior Adjuster", description: "Handles low-complexity, auto-approved claims requiring administrative sign-off", min_score: 0, max_score: 30, user_count: 12, capacity_free: 68, color: "#22C55E" },
+  { id: "skill-1", name: "Junior Adjuster", description: "Handles low-complexity, approved claims requiring administrative sign-off", min_score: 0, max_score: 30, user_count: 12, capacity_free: 68, color: "#22C55E" },
   { id: "skill-2", name: "Senior Adjuster", description: "Reviews moderate-complexity claims with minor documentation gaps", min_score: 31, max_score: 60, user_count: 8, capacity_free: 42, color: "#F59E0B" },
   { id: "skill-3", name: "Tier 2 Clinical Investigator", description: "Investigates high-complexity claims with clinical discrepancies", min_score: 61, max_score: 90, user_count: 4, capacity_free: 25, color: "#E8792B" },
   { id: "skill-4", name: "SIU Fraud Unit", description: "Handles critical-complexity claims with potential fraud indicators", min_score: 91, max_score: 100, user_count: 3, capacity_free: 33, color: "#EF4444" },

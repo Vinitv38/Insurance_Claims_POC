@@ -8,7 +8,7 @@ const activities = [
   { id: 1, icon: Brain, color: "text-acme-orange", time: "2 min ago", text: "AI Engine recalculated score for case-002 — 98/100 (Critical)", type: "score" },
   { id: 2, icon: FileUp, color: "text-blue-400", time: "15 min ago", text: "Genesys_Transcript_042026.txt uploaded for case-002", type: "upload" },
   { id: 3, icon: AlertTriangle, color: "text-red-400", time: "32 min ago", text: "Fatal Override triggered: DIRECT_CONTRADICTION on case-002", type: "alert" },
-  { id: 4, icon: CheckCircle2, color: "text-green-400", time: "1 hr ago", text: "case-001 approved — STP engine processed successfully", type: "success" },
+  { id: 4, icon: CheckCircle2, color: "text-green-400", time: "1 hr ago", text: "case-001 approved — human-based review completed successfully", type: "success" },
   { id: 5, icon: ArrowUpRight, color: "text-amber-400", time: "2 hr ago", text: "case-002 escalated to Tier 2 Clinical (Dr. Karen Volkov)", type: "escalation" },
   { id: 6, icon: FileUp, color: "text-blue-400", time: "3 hr ago", text: "RightFax_CarePlan_041826.tiff processed for case-002 — OCR confidence 62%", type: "upload" },
   { id: 7, icon: Shield, color: "text-purple-400", time: "4 hr ago", text: "Rules engine v2.4.1 deployed — 3 fatal overrides active", type: "system" },

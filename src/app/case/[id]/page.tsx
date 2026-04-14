@@ -6,7 +6,7 @@ import RiskThermometer from "@/components/ui/RiskThermometer";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   ArrowLeft, FileText, AlertTriangle, CheckCircle2, Clock,
   Brain, Eye, ChevronRight, Loader2, X,
@@ -58,10 +58,26 @@ export default function CaseDetailPage() {
   const [imageZoom, setImageZoom] = useState(100);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [docModalTab, setDocModalTab] = useState<DocViewTab>("original");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
+
+  // Pre-fill all document checkboxes on load
+  useEffect(() => {
+    if (currentCase) {
+      setSelectedDocs(new Set(currentCase.documents.map((d) => d.id)));
+    }
+  }, [currentCase]);
+
+  // Auto-hide toast after 4 seconds
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   if (!currentCase) {
     if (isLoading || !isInitialized) {
@@ -562,7 +578,7 @@ export default function CaseDetailPage() {
           </div>
         </div>
         <button
-          onClick={() => alert("Trigger Analysis: Processing " + selectedDocs.size + " selected document(s) for case " + caseData.id)}
+          onClick={() => setToastMessage("Document analysis started for " + selectedDocs.size + " selected document(s) in " + caseData.id)}
           className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-acme-orange text-white text-xs sm:text-sm font-medium hover:bg-acme-orange/90 transition-colors flex-shrink-0"
         >
           <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Trigger Analysis
@@ -752,7 +768,7 @@ export default function CaseDetailPage() {
                             window.location.reload();
                           } catch (err) {
                             console.error("Upload failed:", err);
-                            alert("Upload failed. Check console for details.");
+                            setToastMessage("Upload failed. Check console for details.");
                           } finally {
                             setIsUploading(false);
                             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -958,6 +974,24 @@ export default function CaseDetailPage() {
                 )}
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* In-app Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl bg-acme-teal text-white shadow-lg max-w-sm"
+          >
+            <CheckCircle2 className="w-5 h-5 text-green-300 flex-shrink-0" />
+            <p className="text-sm font-medium">{toastMessage}</p>
+            <button onClick={() => setToastMessage(null)} className="ml-2 p-0.5 rounded hover:bg-white/20 transition-colors flex-shrink-0">
+              <X className="w-4 h-4" />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
