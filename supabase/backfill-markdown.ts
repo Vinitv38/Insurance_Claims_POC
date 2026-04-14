@@ -20,112 +20,18 @@ const supabaseKey = envVars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// For each document, generate a markdown representation from existing extracted_text, ai_findings, and json_schema
 interface DocRow {
   id: string;
   name: string;
-  claim_id: string;
-  type: string;
-  status: string;
   extracted_text: string | null;
-  ai_findings: string[] | null;
-  json_schema: Record<string, unknown> | null;
-  flag_reason: string | null;
-  page_info: string | null;
-  ai_interpreted_md: string | null;
-}
-
-function generateMarkdown(doc: DocRow): string {
-  const lines: string[] = [];
-
-  // Title
-  lines.push(`# ${doc.name}`);
-  lines.push("");
-
-  // Metadata table
-  lines.push("| Field | Value |");
-  lines.push("|-------|-------|");
-  lines.push(`| **Document ID** | ${doc.id} |`);
-  lines.push(`| **Claim ID** | ${doc.claim_id} |`);
-  lines.push(`| **Type** | ${doc.type} |`);
-  lines.push(`| **Status** | ${doc.status.toUpperCase()} |`);
-  if (doc.page_info) {
-    lines.push(`| **Pages** | ${doc.page_info} |`);
-  }
-  if (doc.flag_reason) {
-    lines.push(`| **Flag Reason** | ${doc.flag_reason} |`);
-  }
-  lines.push("");
-
-  // Extracted Text
-  if (doc.extracted_text) {
-    lines.push("## Extracted Content");
-    lines.push("");
-    // Format the extracted text nicely
-    const text = doc.extracted_text;
-    // Split by newlines and render each section
-    const sections = text.split("\n");
-    for (const section of sections) {
-      const trimmed = section.trim();
-      if (!trimmed) continue;
-      // If it looks like a heading (ALL CAPS or ends with colon)
-      if (/^[A-Z][A-Z\s\-—&\/()]+$/.test(trimmed) || /^[A-Z][A-Z\s\-—&\/()]+:?\s*$/.test(trimmed)) {
-        lines.push(`### ${trimmed}`);
-        lines.push("");
-      } else if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-        // Metadata annotations like [HANDWRITTEN DOCUMENT — OCR Confidence: 87%]
-        lines.push(`> *${trimmed}*`);
-        lines.push("");
-      } else if (trimmed.includes(":") && trimmed.indexOf(":") < 30) {
-        // Key-value pairs
-        const colonIdx = trimmed.indexOf(":");
-        const key = trimmed.substring(0, colonIdx).trim();
-        const val = trimmed.substring(colonIdx + 1).trim();
-        lines.push(`- **${key}:** ${val}`);
-      } else {
-        lines.push(trimmed);
-        lines.push("");
-      }
-    }
-    lines.push("");
-  }
-
-  // AI Findings
-  if (doc.ai_findings && doc.ai_findings.length > 0) {
-    lines.push("## AI Analysis Findings");
-    lines.push("");
-    for (const finding of doc.ai_findings) {
-      // Color code based on content
-      if (finding.includes("CRITICAL") || finding.includes("CONTRADICTION") || finding.includes("FAILED")) {
-        lines.push(`- :warning: **${finding}**`);
-      } else if (finding.includes("flag") || finding.includes("red flag") || finding.includes("inconsist") || finding.includes("concern")) {
-        lines.push(`- :triangular_flag_on_post: ${finding}`);
-      } else {
-        lines.push(`- ${finding}`);
-      }
-    }
-    lines.push("");
-  }
-
-  // JSON Schema summary — render key fields as a structured section
-  if (doc.json_schema) {
-    lines.push("## Structured Data Summary");
-    lines.push("");
-    lines.push("```json");
-    lines.push(JSON.stringify(doc.json_schema, null, 2));
-    lines.push("```");
-    lines.push("");
-  }
-
-  return lines.join("\n");
 }
 
 async function backfill() {
-  console.log("Fetching all documents from Supabase...");
+  console.log("Fetching all non-PDF documents from Supabase...");
 
   const { data: docs, error } = await supabase
     .from("documents")
-    .select("id, name, claim_id, type, status, extracted_text, ai_findings, json_schema, flag_reason, page_info, ai_interpreted_md")
+    .select("id, name, extracted_text")
     .order("claim_id")
     .order("name");
 
@@ -139,9 +45,7 @@ async function backfill() {
     return;
   }
 
-  console.log(`Found ${docs.length} documents total.`);
-
-  // Filter to non-PDF docs that don't already have markdown
+  // Filter to non-PDF docs only
   const nonPdfDocs = (docs as DocRow[]).filter(
     (d) => !d.name.toLowerCase().endsWith(".pdf")
   );
@@ -153,7 +57,13 @@ async function backfill() {
 
   for (const doc of nonPdfDocs) {
     try {
-      const markdown = generateMarkdown(doc);
+      // Just use the extracted_text as-is for the markdown
+      const markdown = doc.extracted_text || "";
+
+      if (!markdown) {
+        console.log(`  SKIP ${doc.name} (no extracted_text)`);
+        continue;
+      }
 
       const { error: updateError } = await supabase
         .from("documents")
