@@ -390,7 +390,7 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
     setTimeout(() => {
       set((state) => ({
         cases: state.cases.map((c) =>
-          c.id === "case-002"
+          c.id === "claim-002"
             ? {
                 ...c,
                 complexityScore: phaseState.score,

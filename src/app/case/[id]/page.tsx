@@ -566,6 +566,7 @@ export default function CaseDetailPage() {
           </button>
           <div className="min-w-0">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <span className="text-sm sm:text-base font-mono font-bold text-acme-orange uppercase">{caseData.id}</span>
               <h1 className="text-base sm:text-lg lg:text-xl font-bold text-acme-teal truncate">{caseData.claimantName}</h1>
               <StatusBadge status={caseData.status} />
               <span className={cn("text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded", caseData.complexityScore <= 30 ? "bg-green-50 text-green-700" : caseData.complexityScore <= 60 ? "bg-amber-50 text-amber-700" : caseData.complexityScore <= 80 ? "bg-acme-orange/10 text-acme-orange" : "bg-red-50 text-red-700")}>

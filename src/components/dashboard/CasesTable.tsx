@@ -136,7 +136,7 @@ export default function CasesTable() {
                   )}
                 >
                   <td className="px-4 py-3">
-                    <span className="text-xs font-mono text-acme-orange font-medium">{c.id}</span>
+                    <span className="text-sm font-mono text-acme-orange font-bold uppercase">{c.id}</span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
