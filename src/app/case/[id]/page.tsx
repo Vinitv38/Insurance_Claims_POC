@@ -144,7 +144,7 @@ export default function CaseDetailPage() {
     return { bg: "bg-white", border: "border-gray-200", text: "text-gray-600", dot: "bg-gray-400" };
   }
 
-  function renderOriginalContent(doc: Document) {
+  function renderOriginalContent(doc: Document, isModal = false) {
     const ext = getFileExtension(doc);
     const hasFile = !!doc.filePath;
 
@@ -181,8 +181,8 @@ export default function CaseDetailPage() {
 
       if (ext === "pdf") {
         return (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
+          <div className={cn("space-y-2", isModal && "flex flex-col flex-1 min-h-0")}>
+            <div className="flex items-center justify-between flex-shrink-0">
               <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">PDF Document</span>
               <div className="flex items-center gap-2">
                 <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-acme-orange hover:underline">
@@ -195,8 +195,8 @@ export default function CaseDetailPage() {
             </div>
             <iframe
               src={doc.filePath + "#view=FitH"}
-              className="w-full rounded-lg border border-acme-border bg-white"
-              style={{ height: 'calc(100vh - 260px)' }}
+              className={cn("w-full rounded-lg border border-acme-border bg-white", isModal && "flex-1 min-h-0")}
+              style={isModal ? undefined : { height: 'calc(100vh - 260px)' }}
               title={doc.name}
             />
           </div>
@@ -951,10 +951,10 @@ export default function CaseDetailPage() {
                 </div>
               </div>
               {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto p-5">
-                {docModalTab === "original" && renderOriginalContent(activeDoc)}
+              <div className="flex-1 flex flex-col min-h-0 p-5">
+                {docModalTab === "original" && renderOriginalContent(activeDoc, true)}
                 {docModalTab === "schema" && (
-                  <div className="bg-gray-900 rounded-lg p-5 border border-gray-700 overflow-auto h-full">
+                  <div className="bg-gray-900 rounded-lg p-5 border border-gray-700 overflow-auto flex-1 min-h-0">
                     <pre className="text-xs text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
                       {activeDoc.jsonSchema ? JSON.stringify(activeDoc.jsonSchema, null, 2) : "No JSON schema available for this document."}
                     </pre>
@@ -962,7 +962,7 @@ export default function CaseDetailPage() {
                 )}
                 {docModalTab === "interpreted" && (
                   activeDoc.aiInterpretedMd ? (
-                    <div className="prose prose-sm max-w-none rounded-lg border border-acme-border bg-white p-5 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
+                    <div className="prose prose-sm max-w-none rounded-lg border border-acme-border bg-white p-5 overflow-auto flex-1 min-h-0 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
                       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                         {activeDoc.aiInterpretedMd}
                       </ReactMarkdown>
