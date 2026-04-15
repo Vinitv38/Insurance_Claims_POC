@@ -49,11 +49,24 @@ export interface Assessment {
     discrepancy: number;
     behavioral: number;
   };
+  vectorLabels?: {
+    clinical?: string;
+    documentation?: string;
+    discrepancy?: string;
+    behavioral?: string;
+  };
+  systemRecommendation?: string;
+  scoreDriver?: string;
+  routingRationale?: string;
+  contractStatus?: string;
+  eliminationPeriod?: string;
+  exclusions?: string;
   summary?: string;
   riskIndicators?: string[];
   recommendedAction?: string;
   confidencePct: number;
   documentsAnalyzed: number;
+  clinicalProfileMd?: string;
   aiOutputMd?: string;
 }
 

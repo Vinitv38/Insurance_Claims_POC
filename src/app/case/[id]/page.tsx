@@ -453,9 +453,8 @@ export default function CaseDetailPage() {
     const summaryText = activeAssessment?.summary || caseData.summary;
     const riskIndicators = activeAssessment?.riskIndicators || caseData.riskIndicators;
     const recommendedAction = activeAssessment?.recommendedAction || caseData.recommendedAction;
-    const confidencePct = activeAssessment ? activeAssessment.confidencePct : (caseData.complexityScore <= 30 ? 96.2 : caseData.complexityScore <= 60 ? 89.4 : caseData.complexityScore <= 80 ? 82.1 : 94.8);
-    const docsAnalyzed = activeAssessment?.documentsAnalyzed || caseData.documents.length;
     const vectors = activeAssessment?.vectors || caseData.vectors;
+    const vectorLabels = activeAssessment?.vectorLabels;
     const assessmentScore = activeAssessment?.complexityScore ?? caseData.complexityScore;
 
     return (
@@ -466,6 +465,15 @@ export default function CaseDetailPage() {
             <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
               <Brain className="w-4 h-4 text-acme-orange" />
               <h2 className="text-sm font-semibold text-acme-teal">AI Decision Summary</h2>
+              {activeAssessment?.systemRecommendation && (
+                <span className={cn("text-[10px] px-2 py-0.5 rounded font-bold uppercase",
+                  activeAssessment.systemRecommendation.includes("APPROVE") ? "bg-green-50 text-green-700 border border-green-200" :
+                  activeAssessment.systemRecommendation.includes("ESCALATE") ? "bg-red-50 text-red-700 border border-red-200" :
+                  "bg-amber-50 text-amber-700 border border-amber-200"
+                )}>
+                  {activeAssessment.systemRecommendation}
+                </span>
+              )}
               <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">AUTO-GENERATED</span>
             </div>
 
@@ -507,29 +515,34 @@ export default function CaseDetailPage() {
             )}
 
             <div className="p-5 space-y-6">
-              {/* Assessment Score Badge (when viewing specific assessment) */}
+              {/* Assessment Score Badge + Score Driver */}
               {activeAssessment && (
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded",
-                    assessmentScore <= 30 ? "bg-green-50 text-green-700 border border-green-200" :
-                    assessmentScore <= 60 ? "bg-amber-50 text-amber-700 border border-amber-200" :
-                    assessmentScore <= 80 ? "bg-acme-orange/10 text-acme-orange border border-acme-orange/20" :
-                    "bg-red-50 text-red-700 border border-red-200"
-                  )}>
-                    Score: {assessmentScore}/100
-                  </span>
-                  <span className="text-[10px] text-gray-400">
-                    {activeAssessment.documentsAnalyzed} documents analyzed
-                  </span>
-                  {assessments.length > 1 && assessments.indexOf(activeAssessment) > 0 && (
-                    <span className="text-[10px] font-mono text-acme-orange">
-                      {assessments[assessments.indexOf(activeAssessment) - 1].complexityScore} {"\u2192"} {assessmentScore}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className={cn("text-xs font-bold px-2.5 py-1 rounded",
+                      assessmentScore <= 30 ? "bg-green-50 text-green-700 border border-green-200" :
+                      assessmentScore <= 60 ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                      assessmentScore <= 80 ? "bg-acme-orange/10 text-acme-orange border border-acme-orange/20" :
+                      "bg-red-50 text-red-700 border border-red-200"
+                    )}>
+                      Score: {assessmentScore}/100
                     </span>
+                    <span className="text-[10px] text-gray-400">
+                      {activeAssessment.documentsAnalyzed} documents analyzed
+                    </span>
+                    {assessments.length > 1 && assessments.indexOf(activeAssessment) > 0 && (
+                      <span className="text-[10px] font-mono text-acme-orange">
+                        {assessments[assessments.indexOf(activeAssessment) - 1].complexityScore} {"\u2192"} {assessmentScore}
+                      </span>
+                    )}
+                  </div>
+                  {activeAssessment.scoreDriver && (
+                    <p className="text-[11px] text-gray-500 leading-relaxed italic">{activeAssessment.scoreDriver}</p>
                   )}
                 </div>
               )}
 
-              {/* Clinical Synopsis */}
+              {/* 1. Clinical Synopsis (Executive Summary) */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Stethoscope className="w-4 h-4 text-acme-orange" />
@@ -542,13 +555,47 @@ export default function CaseDetailPage() {
                 </div>
               </div>
 
-              {/* Risk Indicators */}
+              {/* 2. Policy & Compliance Status */}
+              {activeAssessment && (activeAssessment.contractStatus || activeAssessment.eliminationPeriod || activeAssessment.exclusions) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="w-4 h-4 text-acme-teal" />
+                    <h3 className="text-xs font-bold text-acme-teal uppercase tracking-wider">Policy & Compliance Status</h3>
+                  </div>
+                  <div className="bg-acme-teal/5 rounded-lg p-4 border border-acme-teal/20 space-y-2.5">
+                    {activeAssessment.contractStatus && (
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Contract Status</span>
+                        <span className={cn("text-sm font-medium",
+                          activeAssessment.contractStatus.startsWith("ACTIVE") ? "text-green-700" : "text-red-700"
+                        )}>{activeAssessment.contractStatus}</span>
+                      </div>
+                    )}
+                    {activeAssessment.eliminationPeriod && (
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Elimination Period</span>
+                        <span className="text-sm text-gray-700">{activeAssessment.eliminationPeriod}</span>
+                      </div>
+                    )}
+                    {activeAssessment.exclusions && (
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Exclusions</span>
+                        <span className="text-sm text-gray-700">{activeAssessment.exclusions}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Critical Alerts & Discrepancies */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Shield className="w-4 h-4 text-green-500" />
-                  <h3 className="text-xs font-bold text-green-600 uppercase tracking-wider">Risk Indicators / Red Flags</h3>
+                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                  <h3 className="text-xs font-bold text-red-600 uppercase tracking-wider">Critical Alerts & Discrepancies</h3>
                 </div>
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div className={cn("rounded-lg p-4 border",
+                  riskIndicators?.some(r => r.includes("CRITICAL")) ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
+                )}>
                   {riskIndicators?.map((indicator, i) => (
                     <div key={i} className="flex items-start gap-2 py-1.5">
                       {indicator.includes("CRITICAL") ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" /> :
@@ -557,6 +604,8 @@ export default function CaseDetailPage() {
                        indicator.includes("REDUCED") ? <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 mt-0.5 flex-shrink-0" /> :
                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />}
                       <p className={cn("text-sm",
+                        indicator.includes("CRITICAL") ? "text-red-700 font-medium" :
+                        indicator.includes("WARNING") ? "text-amber-700" :
                         indicator.includes("RESOLVED") ? "text-blue-600" :
                         indicator.includes("REDUCED") ? "text-teal-600" :
                         "text-gray-600"
@@ -566,7 +615,26 @@ export default function CaseDetailPage() {
                 </div>
               </div>
 
-              {/* Recommended Next Steps */}
+              {/* 4. Clinical & Functional Profile */}
+              {activeAssessment?.clinicalProfileMd && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileSearch className="w-4 h-4 text-purple-500" />
+                    <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wider">Clinical & Functional Profile</h3>
+                  </div>
+                  <div className="bg-purple-50/50 rounded-lg p-4 border border-purple-200/50 prose prose-sm max-w-none
+                    prose-headings:text-xs prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wider prose-headings:text-purple-700 prose-headings:mt-4 prose-headings:mb-2 first:prose-headings:mt-0
+                    prose-li:text-sm prose-li:text-gray-700 prose-li:my-0.5
+                    prose-p:text-sm prose-p:text-gray-600 prose-p:leading-relaxed
+                    prose-strong:text-gray-800">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                      {activeAssessment.clinicalProfileMd}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Recommended Next Steps (Targeted Next Steps for Adjuster) */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <ClipboardList className="w-4 h-4 text-blue-500" />
@@ -577,41 +645,108 @@ export default function CaseDetailPage() {
                 </div>
               </div>
 
-              {/* AI Confidence */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">AI Confidence Level</span>
-                  <span className="text-sm font-bold text-green-600">
-                    {confidencePct.toFixed(1)}%
-                  </span>
+              {/* Routing Rationale */}
+              {activeAssessment?.routingRationale && (
+                <div className="bg-gray-50 rounded-lg p-3 border border-acme-border/50">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">Routing Rationale</span>
+                  <p className="text-[11px] text-gray-600 leading-relaxed">{activeAssessment.routingRationale}</p>
                 </div>
-                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${confidencePct}%` }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                  />
-                </div>
-                <p className="text-[10px] text-gray-500 mt-2">Based on {docsAnalyzed} source documents analyzed.</p>
-              </div>
+              )}
 
             </div>
           </div>
         </div>
 
-        {/* Right Pane: Complexity Vectors */}
+        {/* Right Pane: Complexity Vectors + Score */}
         <div className="lg:col-span-1 space-y-4">
+          {/* Complexity Score Card */}
+          <div className="rounded-xl border border-acme-border bg-white p-4">
+            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">
+              Complexity Score
+              {activeAssessment && <span className="text-[9px] text-gray-400 font-normal ml-1">({activeAssessment.label})</span>}
+            </h3>
+            <div className="flex items-center gap-3 mb-2">
+              <span className={cn("text-2xl font-bold",
+                assessmentScore <= 30 ? "text-green-600" :
+                assessmentScore <= 60 ? "text-amber-600" :
+                assessmentScore <= 80 ? "text-acme-orange" :
+                "text-red-600"
+              )}>
+                {assessmentScore}
+              </span>
+              <span className="text-sm text-gray-400">/100</span>
+              {assessments.length > 1 && activeAssessment && assessments.indexOf(activeAssessment) > 0 && (
+                <span className="text-xs font-mono text-acme-orange ml-auto">
+                  {assessments[assessments.indexOf(activeAssessment) - 1].complexityScore} {"\u2192"} {assessmentScore}
+                </span>
+              )}
+            </div>
+            <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+              <motion.div
+                className={cn("h-full rounded-full",
+                  assessmentScore <= 30 ? "bg-green-500" :
+                  assessmentScore <= 60 ? "bg-amber-500" :
+                  assessmentScore <= 80 ? "bg-acme-orange" :
+                  "bg-red-500"
+                )}
+                initial={{ width: "0%" }}
+                animate={{ width: `${assessmentScore}%` }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+
+          {/* Complexity Vectors */}
           <div className="rounded-xl border border-acme-border bg-white p-4">
             <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">
               Complexity Vectors
-              {activeAssessment && <span className="text-[9px] text-gray-400 font-normal ml-1">({activeAssessment.label})</span>}
             </h3>
             <div className="space-y-3">
-              <RiskThermometer label="Clinical" value={vectors.clinical} subscript="V_c" />
-              <RiskThermometer label="Documentation" value={vectors.documentation} subscript="V_d" />
-              <RiskThermometer label="Discrepancy" value={vectors.discrepancy} subscript="V_i" />
-              <RiskThermometer label="Behavioral" value={vectors.behavioral} subscript="V_b" />
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <RiskThermometer label="Clinical" value={vectors.clinical} subscript="V_c" />
+                </div>
+                {vectorLabels?.clinical && (
+                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6",
+                    vectorLabels.clinical === "STABLE" ? "bg-green-50 text-green-600" :
+                    vectorLabels.clinical === "IMPROVING" ? "bg-blue-50 text-blue-600" :
+                    "bg-red-50 text-red-600"
+                  )}>{vectorLabels.clinical}</span>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <RiskThermometer label="Documentation" value={vectors.documentation} subscript="V_d" />
+                </div>
+                {vectorLabels?.documentation && (
+                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6",
+                    vectorLabels.documentation === "COMPLETE" ? "bg-green-50 text-green-600" :
+                    "bg-red-50 text-red-600"
+                  )}>{vectorLabels.documentation}</span>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <RiskThermometer label="Discrepancy" value={vectors.discrepancy} subscript="V_i" />
+                </div>
+                {vectorLabels?.discrepancy && (
+                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6",
+                    vectorLabels.discrepancy === "NO CONTRADICTION" ? "bg-green-50 text-green-600" :
+                    "bg-red-50 text-red-600"
+                  )}>{vectorLabels.discrepancy}</span>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <RiskThermometer label="Behavioral" value={vectors.behavioral} subscript="V_b" />
+                </div>
+                {vectorLabels?.behavioral && (
+                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6",
+                    vectorLabels.behavioral === "CALM" ? "bg-green-50 text-green-600" :
+                    "bg-red-50 text-red-600"
+                  )}>{vectorLabels.behavioral}</span>
+                )}
+              </div>
             </div>
           </div>
 
