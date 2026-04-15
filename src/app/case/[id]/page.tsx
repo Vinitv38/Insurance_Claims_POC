@@ -76,19 +76,20 @@ export default function CaseDetailPage() {
 
   // Fetch actual file content for TXT/JSON/CSV when a document is selected
   useEffect(() => {
-    if (!activeDoc) return;
-    const ext = (activeDoc.name || "").split(".").pop()?.toLowerCase() || "";
-    if (["txt", "json", "csv"].includes(ext) && activeDoc.filePath && !fetchedFileContent[activeDoc.id]) {
+    const doc = currentCase?.documents.find((d) => d.id === activeDocumentId);
+    if (!doc) return;
+    const ext = (doc.name || "").split(".").pop()?.toLowerCase() || "";
+    if (["txt", "json", "csv"].includes(ext) && doc.filePath && !fetchedFileContent[doc.id]) {
       setFetchingFile(true);
-      fetch(activeDoc.filePath)
+      fetch(doc.filePath)
         .then((res) => res.text())
         .then((text) => {
-          setFetchedFileContent((prev) => ({ ...prev, [activeDoc.id]: text }));
+          setFetchedFileContent((prev) => ({ ...prev, [doc.id]: text }));
           setFetchingFile(false);
         })
         .catch(() => setFetchingFile(false));
     }
-  }, [activeDoc, fetchedFileContent]);
+  }, [currentCase, activeDocumentId, fetchedFileContent]);
 
   // Auto-hide toast after 4 seconds
   useEffect(() => {
