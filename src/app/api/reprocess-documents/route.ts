@@ -6,8 +6,11 @@ import DocumentIntelligence, {
 
 export const maxDuration = 300; // 5 min timeout for processing multiple docs
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get("force") === "true";
+
     const endpoint = process.env.DI_ENDPOINT;
     const apiKey = process.env.DI_API_KEY;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,12 +32,19 @@ export async function POST() {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch documents that have a file_path but no ai_interpreted_md
-    const { data: docs, error: fetchError } = await supabase
+    // Fetch documents that have a file_path
+    // If force=true, reprocess ALL docs with file_path (even if ai_interpreted_md exists)
+    // Otherwise, only process docs where ai_interpreted_md is null
+    let query = supabase
       .from("documents")
       .select("id, file_path")
-      .not("file_path", "is", null)
-      .is("ai_interpreted_md", null);
+      .not("file_path", "is", null);
+
+    if (!force) {
+      query = query.is("ai_interpreted_md", null);
+    }
+
+    const { data: docs, error: fetchError } = await query;
 
     if (fetchError) {
       return NextResponse.json(
