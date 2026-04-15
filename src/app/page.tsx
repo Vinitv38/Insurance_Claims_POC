@@ -61,6 +61,7 @@ export default function HomePage() {
           scoreChange: { from: 0, to: 0 },
         },
       ],
+      assessments: [],
       summary: "New claim — pending initial AI assessment and document upload.",
       riskIndicators: ["INFO: Awaiting initial document upload and AI scoring"],
       recommendedAction: "Upload initial documentation to begin AI assessment.",
