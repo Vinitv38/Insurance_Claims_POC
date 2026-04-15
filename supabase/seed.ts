@@ -756,14 +756,28 @@ async function seed() {
   }
   console.log(`  Inserted ${claims.length} claims.\n`);
 
-  // Insert documents
+  // Insert documents — auto-populate file_path and ai_interpreted_md
+  // so that re-seeding never wipes these fields
   console.log("Inserting documents...");
-  const { error: docsError } = await supabase.from("documents").insert(documents);
+  const claimsWithStorage = ["claim-001", "claim-002", "claim-003"];
+  const enrichedDocs = documents.map((doc) => {
+    const hasStorage = claimsWithStorage.includes(doc.claim_id);
+    return {
+      ...doc,
+      // Generate file_path from Supabase Storage public URL if the claim has uploaded files
+      file_path: hasStorage
+        ? `${supabaseUrl}/storage/v1/object/public/documents/${doc.claim_id}/${doc.name}`
+        : (doc as Record<string, unknown>).file_path ?? null,
+      // Use extracted_text as ai_interpreted_md fallback
+      ai_interpreted_md: (doc as Record<string, unknown>).ai_interpreted_md ?? doc.extracted_text ?? null,
+    };
+  });
+  const { error: docsError } = await supabase.from("documents").insert(enrichedDocs);
   if (docsError) {
     console.error("  Error inserting documents:", docsError.message);
     return;
   }
-  console.log(`  Inserted ${documents.length} documents.\n`);
+  console.log(`  Inserted ${enrichedDocs.length} documents.\n`);
 
   // Insert audit history
   console.log("Inserting audit history...");
