@@ -69,7 +69,7 @@ export default function ReportsPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard title="Total Claims (YTD)" value="1,081" icon={BarChart3} color="orange" subtitle="Across all product lines" trend={{ value: "8.4% vs prior year", positive: true }} />
-        <MetricCard title="Straight-Through Rate" value="72.4%" icon={Zap} color="green" subtitle="Claims requiring human-based approval review" trend={{ value: "5.1% improvement", positive: true }} />
+        <MetricCard title="Straight-Through Rate" value="72.4%" icon={Zap} color="green" subtitle="Claims auto reviewed for human based approval" trend={{ value: "5.1% improvement", positive: true }} />
         <MetricCard title="Avg. Resolution Time" value="3.2 days" icon={Clock} color="blue" subtitle="From filing to decision" trend={{ value: "0.8 days faster", positive: true }} />
         <MetricCard title="Customer Satisfaction" value="94.2%" icon={CheckCircle2} color="purple" subtitle="Post-claim survey score" trend={{ value: "1.3% improvement", positive: true }} />
       </div>

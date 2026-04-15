@@ -116,7 +116,7 @@ export default function HomePage() {
         <MetricCard
           title="Straight-Through Processing %"
           value={isLoading ? "—" : `${stpRate}%`}
-          subtitle="Claims requiring human-based approval review"
+          subtitle="Claims auto reviewed for human based approval"
           icon={Zap}
           color="green"
           trend={{ value: "3.2% improvement", positive: true }}
