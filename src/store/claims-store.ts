@@ -36,6 +36,40 @@ export interface AuditEntry {
   scoreChange?: { from: number; to: number };
 }
 
+export interface Assessment {
+  id: string;
+  claimId: string;
+  label: string;
+  assessmentDate: string;
+  trigger: string;
+  complexityScore: number;
+  vectors: {
+    clinical: number;
+    documentation: number;
+    discrepancy: number;
+    behavioral: number;
+  };
+  vectorLabels?: {
+    clinical?: string;
+    documentation?: string;
+    discrepancy?: string;
+    behavioral?: string;
+  };
+  systemRecommendation?: string;
+  scoreDriver?: string;
+  routingRationale?: string;
+  contractStatus?: string;
+  eliminationPeriod?: string;
+  exclusions?: string;
+  summary?: string;
+  riskIndicators?: string[];
+  recommendedAction?: string;
+  confidencePct: number;
+  documentsAnalyzed: number;
+  clinicalProfileMd?: string;
+  aiOutputMd?: string;
+}
+
 export interface ClaimCase {
   id: string;
   claimantName: string;
@@ -56,6 +90,7 @@ export interface ClaimCase {
   };
   documents: Document[];
   auditHistory: AuditEntry[];
+  assessments: Assessment[];
   summary?: string;
   riskIndicators?: string[];
   recommendedAction?: string;

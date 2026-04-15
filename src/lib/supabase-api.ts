@@ -3,6 +3,7 @@ import type {
   ClaimCase,
   Document,
   AuditEntry,
+  Assessment,
   SkillSet,
   FatalOverride,
 } from "@/store/claims-store";
@@ -12,7 +13,8 @@ import type {
 function dbRowToClaim(
   row: Record<string, unknown>,
   documents: Document[],
-  auditHistory: AuditEntry[]
+  auditHistory: AuditEntry[],
+  assessments: Assessment[] = []
 ): ClaimCase {
   return {
     id: row.id as string,
@@ -34,12 +36,49 @@ function dbRowToClaim(
     },
     documents,
     auditHistory,
+    assessments,
     summary: (row.summary as string) || undefined,
     riskIndicators: (row.risk_indicators as string[]) || undefined,
     recommendedAction: (row.recommended_action as string) || undefined,
     eliminationPeriod: (row.elimination_period as string) || undefined,
     filingDate: row.filing_date as string,
     lastUpdated: row.last_updated as string,
+  };
+}
+
+function dbRowToAssessment(row: Record<string, unknown>): Assessment {
+  return {
+    id: row.id as string,
+    claimId: row.claim_id as string,
+    label: row.label as string,
+    assessmentDate: row.assessment_date as string,
+    trigger: row.trigger as string,
+    complexityScore: row.complexity_score as number,
+    vectors: {
+      clinical: row.vector_clinical as number,
+      documentation: row.vector_documentation as number,
+      discrepancy: row.vector_discrepancy as number,
+      behavioral: row.vector_behavioral as number,
+    },
+    vectorLabels: {
+      clinical: (row.vector_clinical_label as string) || undefined,
+      documentation: (row.vector_documentation_label as string) || undefined,
+      discrepancy: (row.vector_discrepancy_label as string) || undefined,
+      behavioral: (row.vector_behavioral_label as string) || undefined,
+    },
+    systemRecommendation: (row.system_recommendation as string) || undefined,
+    scoreDriver: (row.score_driver as string) || undefined,
+    routingRationale: (row.routing_rationale as string) || undefined,
+    contractStatus: (row.contract_status as string) || undefined,
+    eliminationPeriod: (row.elimination_period as string) || undefined,
+    exclusions: (row.exclusions as string) || undefined,
+    summary: (row.summary as string) || undefined,
+    riskIndicators: (row.risk_indicators as string[]) || undefined,
+    recommendedAction: (row.recommended_action as string) || undefined,
+    confidencePct: Number(row.confidence_pct) || 0,
+    documentsAnalyzed: row.documents_analyzed as number,
+    clinicalProfileMd: (row.clinical_profile_md as string) || undefined,
+    aiOutputMd: (row.ai_output_md as string) || undefined,
   };
 }
 
@@ -117,7 +156,7 @@ export async function fetchAllClaims(): Promise<ClaimCase[]> {
 
   const claimIds = claimsData.map((c) => c.id);
 
-  const [docsResult, auditResult] = await Promise.all([
+  const [docsResult, auditResult, assessResult] = await Promise.all([
     supabase
       .from("documents")
       .select("*")
@@ -128,10 +167,16 @@ export async function fetchAllClaims(): Promise<ClaimCase[]> {
       .select("*")
       .in("claim_id", claimIds)
       .order("timestamp", { ascending: true }),
+    supabase
+      .from("assessments")
+      .select("*")
+      .in("claim_id", claimIds)
+      .order("assessment_date", { ascending: true }),
   ]);
 
   if (docsResult.error) throw docsResult.error;
   if (auditResult.error) throw auditResult.error;
+  if (assessResult.error) throw assessResult.error;
 
   const docsByClaimId: Record<string, Document[]> = {};
   for (const row of docsResult.data || []) {
@@ -147,11 +192,19 @@ export async function fetchAllClaims(): Promise<ClaimCase[]> {
     auditByClaimId[claimId].push(dbRowToAuditEntry(row as Record<string, unknown>));
   }
 
+  const assessByClaimId: Record<string, Assessment[]> = {};
+  for (const row of assessResult.data || []) {
+    const claimId = row.claim_id as string;
+    if (!assessByClaimId[claimId]) assessByClaimId[claimId] = [];
+    assessByClaimId[claimId].push(dbRowToAssessment(row as Record<string, unknown>));
+  }
+
   return claimsData.map((row) =>
     dbRowToClaim(
       row as Record<string, unknown>,
       docsByClaimId[row.id] || [],
-      auditByClaimId[row.id] || []
+      auditByClaimId[row.id] || [],
+      assessByClaimId[row.id] || []
     )
   );
 }
@@ -178,10 +231,17 @@ export async function fetchClaimById(id: string): Promise<ClaimCase | null> {
       .order("timestamp", { ascending: true }),
   ]);
 
+  const assessResult = await supabase
+    .from("assessments")
+    .select("*")
+    .eq("claim_id", id)
+    .order("assessment_date", { ascending: true });
+
   const docs = (docsResult.data || []).map((r) => dbRowToDocument(r as Record<string, unknown>));
   const audit = (auditResult.data || []).map((r) => dbRowToAuditEntry(r as Record<string, unknown>));
+  const assessments = (assessResult.data || []).map((r) => dbRowToAssessment(r as Record<string, unknown>));
 
-  return dbRowToClaim(claimData as Record<string, unknown>, docs, audit);
+  return dbRowToClaim(claimData as Record<string, unknown>, docs, audit, assessments);
 }
 
 export async function fetchSkillSets(): Promise<SkillSet[]> {

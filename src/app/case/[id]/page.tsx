@@ -61,6 +61,9 @@ export default function CaseDetailPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [docModalTab, setDocModalTab] = useState<DocViewTab>("original");
+  const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(null);
+  const [fetchedFileContent, setFetchedFileContent] = useState<Record<string, string>>({});
+  const [fetchingFile, setFetchingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
 
@@ -70,6 +73,23 @@ export default function CaseDetailPage() {
       setSelectedDocs(new Set(currentCase.documents.map((d) => d.id)));
     }
   }, [currentCase]);
+
+  // Fetch actual file content for TXT/JSON/CSV when a document is selected
+  useEffect(() => {
+    const doc = currentCase?.documents.find((d) => d.id === activeDocumentId);
+    if (!doc) return;
+    const ext = (doc.name || "").split(".").pop()?.toLowerCase() || "";
+    if (["txt", "json", "csv"].includes(ext) && doc.filePath && !fetchedFileContent[doc.id]) {
+      setFetchingFile(true);
+      fetch(doc.filePath)
+        .then((res) => res.text())
+        .then((text) => {
+          setFetchedFileContent((prev) => ({ ...prev, [doc.id]: text }));
+          setFetchingFile(false);
+        })
+        .catch(() => setFetchingFile(false));
+    }
+  }, [currentCase, activeDocumentId, fetchedFileContent]);
 
   // Auto-hide toast after 4 seconds
   useEffect(() => {
@@ -204,6 +224,7 @@ export default function CaseDetailPage() {
       }
 
       if (ext === "txt") {
+        const content = fetchedFileContent[doc.id] || null;
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -217,21 +238,26 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-              {doc.extractedText?.split("\n").map((line, i) => {
-                const isHighlighted = line.includes("MISSING") || line.includes("FAILED") || line.includes("CRITICAL") || line.includes("CONTRADICTION") || line.includes("wheelchair") || line.includes("HANDWRITTEN") || line.includes("OCR") || line.includes("SENTIMENT");
-                return (
-                  <div key={i} className={cn("py-0.5", isHighlighted && "bbox-highlight px-1 my-1")}>
-                    {line}
-                  </div>
-                );
-              })}
-            </div>
+            {fetchingFile && !content ? (
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border flex items-center justify-center" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <Loader2 className="w-5 h-5 animate-spin text-acme-teal" />
+                <span className="ml-2 text-xs text-gray-500">Loading file content...</span>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto whitespace-pre-wrap" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                {content || doc.extractedText || "No content available."}
+              </div>
+            )}
           </div>
         );
       }
 
       if (ext === "json") {
+        const content = fetchedFileContent[doc.id] || null;
+        let formatted = content;
+        if (content) {
+          try { formatted = JSON.stringify(JSON.parse(content), null, 2); } catch { formatted = content; }
+        }
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -245,16 +271,24 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-              <pre className="text-[11px] text-cyan-400 font-mono leading-relaxed whitespace-pre-wrap">
-                {doc.extractedText || "Loading JSON content..."}
-              </pre>
-            </div>
+            {fetchingFile && !content ? (
+              <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 flex items-center justify-center" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+                <span className="ml-2 text-xs text-gray-400">Loading file content...</span>
+              </div>
+            ) : (
+              <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <pre className="text-[11px] text-cyan-400 font-mono leading-relaxed whitespace-pre-wrap">
+                  {formatted || doc.extractedText || "No content available."}
+                </pre>
+              </div>
+            )}
           </div>
         );
       }
 
       if (ext === "csv") {
+        const content = fetchedFileContent[doc.id] || null;
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -268,11 +302,16 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-              {doc.extractedText?.split("\n").map((line, i) => (
-                <div key={i} className="py-0.5">{line}</div>
-              ))}
-            </div>
+            {fetchingFile && !content ? (
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border flex items-center justify-center" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <Loader2 className="w-5 h-5 animate-spin text-acme-teal" />
+                <span className="ml-2 text-xs text-gray-500">Loading file content...</span>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto whitespace-pre-wrap" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                {content || doc.extractedText || "No content available."}
+              </div>
+            )}
           </div>
         );
       }
@@ -322,8 +361,76 @@ export default function CaseDetailPage() {
     );
   }
 
-  /* Helper to render the document viewer with 3 tabs */
+  /* Helper: parse CSV text into a table */
+  function renderCsvTable(csvText: string) {
+    const lines = csvText.trim().split("\n").filter((l) => l.trim());
+    if (lines.length === 0) return <p className="text-xs text-gray-500">No data to display.</p>;
+    const parseRow = (row: string) => {
+      const cells: string[] = [];
+      let current = "";
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i];
+        if (ch === '"') { inQuotes = !inQuotes; }
+        else if (ch === "," && !inQuotes) { cells.push(current.trim()); current = ""; }
+        else { current += ch; }
+      }
+      cells.push(current.trim());
+      return cells;
+    };
+    const headers = parseRow(lines[0]);
+    const rows = lines.slice(1).map(parseRow);
+    return (
+      <div className="overflow-auto rounded-lg border border-acme-border" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+        <table className="w-full text-[11px] border-collapse">
+          <thead className="bg-acme-teal text-white sticky top-0">
+            <tr>
+              {headers.map((h, i) => (
+                <th key={i} className="px-3 py-2 text-left font-semibold whitespace-nowrap border-r border-acme-teal/30 last:border-r-0">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, ri) => (
+              <tr key={ri} className={cn("border-b border-gray-200", ri % 2 === 0 ? "bg-white" : "bg-gray-50")}>
+                {row.map((cell, ci) => (
+                  <td key={ci} className="px-3 py-1.5 text-gray-600 whitespace-nowrap border-r border-gray-200 last:border-r-0">{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  /* Helper: determine which tabs to show based on file extension */
+  function getDocTabs(doc: Document): { id: DocViewTab; label: string; icon: React.ReactNode }[] {
+    const ext = getFileExtension(doc);
+    if (ext === "txt" || ext === "json") {
+      return [{ id: "original", label: "Original", icon: <FileType className="w-3 h-3" /> }];
+    }
+    if (ext === "csv") {
+      return [
+        { id: "original", label: "Original", icon: <FileType className="w-3 h-3" /> },
+        { id: "interpreted", label: "Interpreted", icon: <Brain className="w-3 h-3" /> },
+      ];
+    }
+    // PDF and all others: show all 3 tabs
+    return [
+      { id: "original", label: "Original", icon: <FileType className="w-3 h-3" /> },
+      { id: "schema", label: "JSON Schema", icon: <Code className="w-3 h-3" /> },
+      { id: "interpreted", label: "AI Interpreted", icon: <Brain className="w-3 h-3" /> },
+    ];
+  }
+
+  /* Helper to render the document viewer with conditional tabs */
   function renderDocumentViewer(doc: Document) {
+    const tabs = getDocTabs(doc);
+    const ext = getFileExtension(doc);
+    const activeTabValid = tabs.some((t) => t.id === docViewTab);
+    const effectiveTab = activeTabValid ? docViewTab : "original";
+
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -337,36 +444,29 @@ export default function CaseDetailPage() {
           </div>
           <StatusBadge status={doc.status} />
         </div>
-        {/* 3-Tab Document Viewer */}
-        <div className="flex items-center gap-1 border-b border-acme-border">
-          <button
-            onClick={() => setDocViewTab("original")}
-            className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px", docViewTab === "original" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
-          >
-            <FileType className="w-3 h-3" /> Original
-          </button>
-          <button
-            onClick={() => setDocViewTab("schema")}
-            className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px", docViewTab === "schema" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
-          >
-            <Code className="w-3 h-3" /> JSON Schema
-          </button>
-          <button
-            onClick={() => setDocViewTab("interpreted")}
-            className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px", docViewTab === "interpreted" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
-          >
-            <Brain className="w-3 h-3" /> AI Interpreted
-          </button>
-        </div>
+        {/* Conditional tabs based on file type */}
+        {tabs.length > 1 && (
+          <div className="flex items-center gap-1 border-b border-acme-border">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setDocViewTab(tab.id)}
+                className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px", effectiveTab === tab.id ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
-          {docViewTab === "original" && (
+          {effectiveTab === "original" && (
             <motion.div key="original" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {renderOriginalContent(doc)}
             </motion.div>
           )}
 
-          {docViewTab === "schema" && (
+          {effectiveTab === "schema" && (
             <motion.div key="schema" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 overflow-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <pre className="text-[11px] text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
@@ -376,9 +476,17 @@ export default function CaseDetailPage() {
             </motion.div>
           )}
 
-          {docViewTab === "interpreted" && (
+          {effectiveTab === "interpreted" && (
             <motion.div key="interpreted" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              {doc.aiInterpretedMd ? (
+              {ext === "csv" ? (
+                // CSV Interpreted: render as table
+                fetchedFileContent[doc.id] ? renderCsvTable(fetchedFileContent[doc.id]) : (
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-acme-teal" />
+                    <span className="ml-2 text-xs text-gray-500">Loading table data...</span>
+                  </div>
+                )
+              ) : doc.aiInterpretedMd ? (
                 <div className="prose prose-sm max-w-none overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50" style={{ maxHeight: 'calc(100vh - 260px)' }}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {doc.aiInterpretedMd}
@@ -439,8 +547,23 @@ export default function CaseDetailPage() {
     );
   }
 
-  /* Decision Tab - AI Summary + Complexity Vectors (no document viewer - moved to overview tab) */
+  /* Decision Tab - AI Summary with Assessment Tabs + Complexity Vectors */
   function renderDecisionTab() {
+    const assessments = caseData.assessments;
+    const hasAssessments = assessments.length > 0;
+    // Default to the latest assessment (last in the list)
+    const activeAssessment = hasAssessments
+      ? assessments.find((a) => a.id === activeAssessmentId) || assessments[assessments.length - 1]
+      : null;
+
+    // Use assessment data if available, otherwise fall back to claim-level data
+    const summaryText = activeAssessment?.summary || caseData.summary;
+    const riskIndicators = activeAssessment?.riskIndicators || caseData.riskIndicators;
+    const recommendedAction = activeAssessment?.recommendedAction || caseData.recommendedAction;
+    const vectors = activeAssessment?.vectors || caseData.vectors;
+    const vectorLabels = activeAssessment?.vectorLabels;
+    const assessmentScore = activeAssessment?.complexityScore ?? caseData.complexityScore;
+
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Left Pane: AI Decision Summary */}
@@ -449,10 +572,57 @@ export default function CaseDetailPage() {
             <div className="px-5 py-4 border-b border-acme-border flex items-center gap-2">
               <Brain className="w-4 h-4 text-acme-orange" />
               <h2 className="text-sm font-semibold text-acme-teal">AI Decision Summary</h2>
+              {activeAssessment?.systemRecommendation && (
+                <span className={cn("text-[10px] px-2 py-0.5 rounded font-bold uppercase",
+                  activeAssessment.systemRecommendation.includes("APPROVE") ? "bg-green-50 text-green-700 border border-green-200" :
+                  activeAssessment.systemRecommendation.includes("ESCALATE") ? "bg-red-50 text-red-700 border border-red-200" :
+                  "bg-amber-50 text-amber-700 border border-amber-200"
+                )}>
+                  {activeAssessment.systemRecommendation}
+                </span>
+              )}
               <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">AUTO-GENERATED</span>
             </div>
+
+            {/* Assessment Tab Bar */}
+            {hasAssessments && (
+              <div className="px-5 pt-3 pb-0 border-b border-acme-border/50">
+                <div className="flex items-center gap-1 overflow-x-auto pb-0 -mb-px scrollbar-thin">
+                  {assessments.map((assessment, idx) => {
+                    const isActive = activeAssessment?.id === assessment.id;
+                    const dateStr = new Date(assessment.assessmentDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                    return (
+                      <button
+                        key={assessment.id}
+                        onClick={() => setActiveAssessmentId(assessment.id)}
+                        className={cn(
+                          "flex-shrink-0 flex flex-col items-start px-4 py-2.5 rounded-t-lg border border-b-0 transition-all text-left min-w-[180px]",
+                          isActive
+                            ? "bg-white border-acme-border text-acme-teal relative z-10"
+                            : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={cn("text-xs font-semibold", isActive ? "text-acme-teal" : "text-gray-600")}>
+                            {assessment.label}
+                          </span>
+                          {idx === assessments.length - 1 && (
+                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-acme-orange/10 text-acme-orange font-bold uppercase">Latest</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 mt-0.5">{dateStr}</span>
+                        <span className="text-[9px] text-gray-400 mt-0.5 truncate max-w-[200px]">
+                          Triggered by: {assessment.trigger}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="p-5 space-y-6">
-              {/* Clinical Synopsis */}
+              {/* 1. Clinical Synopsis (Executive Summary) */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Stethoscope className="w-4 h-4 text-acme-orange" />
@@ -460,72 +630,187 @@ export default function CaseDetailPage() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    {caseData.summary}
+                    {summaryText}
                   </p>
                 </div>
               </div>
 
-              {/* Risk Indicators */}
+              {/* 2. Policy & Compliance Status */}
+              {activeAssessment && (activeAssessment.contractStatus || activeAssessment.eliminationPeriod || activeAssessment.exclusions) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="w-4 h-4 text-acme-teal" />
+                    <h3 className="text-xs font-bold text-acme-teal uppercase tracking-wider">Policy & Compliance Status</h3>
+                  </div>
+                  <div className="bg-acme-teal/5 rounded-lg p-4 border border-acme-teal/20 space-y-2.5">
+                    {activeAssessment.contractStatus && (
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Contract Status</span>
+                        <span className={cn("text-sm font-medium",
+                          activeAssessment.contractStatus.startsWith("ACTIVE") ? "text-green-700" : "text-red-700"
+                        )}>{activeAssessment.contractStatus}</span>
+                      </div>
+                    )}
+                    {activeAssessment.eliminationPeriod && (
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Elimination Period</span>
+                        <span className="text-sm text-gray-700">{activeAssessment.eliminationPeriod}</span>
+                      </div>
+                    )}
+                    {activeAssessment.exclusions && (
+                      <div className="flex items-start gap-3">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Exclusions</span>
+                        <span className="text-sm text-gray-700">{activeAssessment.exclusions}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Critical Alerts & Discrepancies */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Shield className="w-4 h-4 text-green-500" />
-                  <h3 className="text-xs font-bold text-green-600 uppercase tracking-wider">Risk Indicators / Red Flags</h3>
+                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                  <h3 className="text-xs font-bold text-red-600 uppercase tracking-wider">Critical Alerts & Discrepancies</h3>
                 </div>
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  {caseData.riskIndicators?.map((indicator, i) => (
+                <div className={cn("rounded-lg p-4 border",
+                  riskIndicators?.some(r => r.includes("CRITICAL")) ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
+                )}>
+                  {riskIndicators?.map((indicator, i) => (
                     <div key={i} className="flex items-start gap-2 py-1.5">
                       {indicator.includes("CRITICAL") ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" /> :
                        indicator.includes("WARNING") ? <Clock className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" /> :
+                       indicator.includes("RESOLVED") ? <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" /> :
+                       indicator.includes("REDUCED") ? <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 mt-0.5 flex-shrink-0" /> :
                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />}
-                      <p className="text-sm text-gray-600">{indicator}</p>
+                      <p className={cn("text-sm",
+                        indicator.includes("CRITICAL") ? "text-red-700 font-medium" :
+                        indicator.includes("WARNING") ? "text-amber-700" :
+                        indicator.includes("RESOLVED") ? "text-blue-600" :
+                        indicator.includes("REDUCED") ? "text-teal-600" :
+                        "text-gray-600"
+                      )}>{indicator}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Recommended Next Steps */}
+              {/* 4. Clinical & Functional Profile */}
+              {activeAssessment?.clinicalProfileMd && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileSearch className="w-4 h-4 text-acme-teal" />
+                    <h3 className="text-xs font-bold text-acme-teal uppercase tracking-wider">Clinical & Functional Profile</h3>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50 prose prose-sm max-w-none
+                    prose-headings:text-xs prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wider prose-headings:text-acme-teal prose-headings:mt-4 prose-headings:mb-2 first:prose-headings:mt-0
+                    prose-li:text-sm prose-li:text-gray-700 prose-li:my-0.5
+                    prose-p:text-sm prose-p:text-gray-600 prose-p:leading-relaxed
+                    prose-strong:text-gray-800">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                      {activeAssessment.clinicalProfileMd}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Recommended Next Steps (Targeted Next Steps for Adjuster) */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <ClipboardList className="w-4 h-4 text-blue-500" />
                   <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider">Recommended Next Steps</h3>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-gray-700 leading-relaxed font-medium">{caseData.recommendedAction}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed font-medium">{recommendedAction}</p>
                 </div>
               </div>
 
-              {/* AI Confidence */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">AI Confidence Level</span>
-                  <span className="text-sm font-bold text-green-600">
-                    {caseData.complexityScore <= 30 ? "96.2%" : caseData.complexityScore <= 60 ? "89.4%" : caseData.complexityScore <= 80 ? "82.1%" : "94.8%"}
-                  </span>
+              {/* Routing Rationale */}
+              {activeAssessment?.routingRationale && (
+                <div className="bg-gray-50 rounded-lg p-3 border border-acme-border/50">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">Routing Rationale</span>
+                  <p className="text-[11px] text-gray-600 leading-relaxed">{activeAssessment.routingRationale}</p>
                 </div>
-                <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{ width: caseData.complexityScore <= 30 ? "96.2%" : caseData.complexityScore <= 60 ? "89.4%" : caseData.complexityScore <= 80 ? "82.1%" : "94.8%" }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
-                  />
-                </div>
-                <p className="text-[10px] text-gray-500 mt-2">Based on {caseData.documents.length} source documents analyzed.</p>
-              </div>
+              )}
 
             </div>
           </div>
         </div>
 
-        {/* Right Pane: Complexity Vectors */}
+        {/* Right Pane: Complexity Vectors + Score */}
         <div className="lg:col-span-1 space-y-4">
+          {/* Complexity Score Card */}
           <div className="rounded-xl border border-acme-border bg-white p-4">
-            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Complexity Vectors</h3>
+            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">
+              Complexity Score
+              {activeAssessment && <span className="text-[9px] text-gray-400 font-normal ml-1">({activeAssessment.label})</span>}
+            </h3>
+            <div className="flex items-center gap-3 mb-2">
+              <span className={cn("text-2xl font-bold",
+                assessmentScore <= 30 ? "text-green-600" :
+                assessmentScore <= 60 ? "text-amber-600" :
+                assessmentScore <= 80 ? "text-acme-orange" :
+                "text-red-600"
+              )}>
+                {assessmentScore}
+              </span>
+              <span className="text-sm text-gray-400">/100</span>
+              {assessments.length > 1 && activeAssessment && assessments.indexOf(activeAssessment) > 0 && (
+                <span className="text-xs font-mono text-acme-orange ml-auto">
+                  {assessments[assessments.indexOf(activeAssessment) - 1].complexityScore} {"\u2192"} {assessmentScore}
+                </span>
+              )}
+            </div>
+            <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+              <motion.div
+                className={cn("h-full rounded-full",
+                  assessmentScore <= 30 ? "bg-green-500" :
+                  assessmentScore <= 60 ? "bg-amber-500" :
+                  assessmentScore <= 80 ? "bg-acme-orange" :
+                  "bg-red-500"
+                )}
+                initial={{ width: "0%" }}
+                animate={{ width: `${assessmentScore}%` }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+
+          {/* Complexity Vectors */}
+          <div className="rounded-xl border border-acme-border bg-white p-4">
+            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">
+              Complexity Vectors
+            </h3>
             <div className="space-y-3">
-              <RiskThermometer label="Clinical" value={caseData.vectors.clinical} subscript="V_c" />
-              <RiskThermometer label="Documentation" value={caseData.vectors.documentation} subscript="V_d" />
-              <RiskThermometer label="Discrepancy" value={caseData.vectors.discrepancy} subscript="V_i" />
-              <RiskThermometer label="Behavioral" value={caseData.vectors.behavioral} subscript="V_b" />
+              <RiskThermometer label="Clinical" value={vectors.clinical} subscript="V_c" />
+              {vectorLabels?.clinical && (
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
+                  vectorLabels.clinical === "STABLE" ? "bg-green-50 text-green-600" :
+                  vectorLabels.clinical === "IMPROVING" ? "bg-blue-50 text-blue-600" :
+                  "bg-red-50 text-red-600"
+                )}>{vectorLabels.clinical}</span>
+              )}
+              <RiskThermometer label="Documentation" value={vectors.documentation} subscript="V_d" />
+              {vectorLabels?.documentation && (
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
+                  vectorLabels.documentation === "COMPLETE" ? "bg-green-50 text-green-600" :
+                  "bg-red-50 text-red-600"
+                )}>{vectorLabels.documentation}</span>
+              )}
+              <RiskThermometer label="Discrepancy" value={vectors.discrepancy} subscript="V_i" />
+              {vectorLabels?.discrepancy && (
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
+                  vectorLabels.discrepancy === "NO CONTRADICTION" ? "bg-green-50 text-green-600" :
+                  "bg-red-50 text-red-600"
+                )}>{vectorLabels.discrepancy}</span>
+              )}
+              <RiskThermometer label="Behavioral" value={vectors.behavioral} subscript="V_b" />
+              {vectorLabels?.behavioral && (
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
+                  vectorLabels.behavioral === "CALM" ? "bg-green-50 text-green-600" :
+                  "bg-red-50 text-red-600"
+                )}>{vectorLabels.behavioral}</span>
+              )}
             </div>
           </div>
 
@@ -922,26 +1207,24 @@ export default function CaseDetailPage() {
                 <h2 className="text-sm font-semibold text-acme-teal">{activeDoc.name}</h2>
                 <StatusBadge status={activeDoc.status} />
                 <div className="ml-auto flex items-center gap-2">
-                  <div className="flex items-center gap-1 border border-acme-border rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => setDocModalTab("original")}
-                      className={cn("px-3 py-1.5 text-xs font-medium transition-colors", docModalTab === "original" ? "bg-acme-orange text-white" : "text-gray-500 hover:text-gray-700")}
-                    >
-                      Original
-                    </button>
-                    <button
-                      onClick={() => setDocModalTab("schema")}
-                      className={cn("px-3 py-1.5 text-xs font-medium transition-colors", docModalTab === "schema" ? "bg-acme-orange text-white" : "text-gray-500 hover:text-gray-700")}
-                    >
-                      JSON Schema
-                    </button>
-                    <button
-                      onClick={() => setDocModalTab("interpreted")}
-                      className={cn("px-3 py-1.5 text-xs font-medium transition-colors", docModalTab === "interpreted" ? "bg-acme-orange text-white" : "text-gray-500 hover:text-gray-700")}
-                    >
-                      AI Interpreted
-                    </button>
-                  </div>
+                  {(() => {
+                    const modalTabs = getDocTabs(activeDoc);
+                    const modalActiveValid = modalTabs.some((t) => t.id === docModalTab);
+                    const modalEffective = modalActiveValid ? docModalTab : "original";
+                    return modalTabs.length > 1 ? (
+                      <div className="flex items-center gap-1 border border-acme-border rounded-lg overflow-hidden">
+                        {modalTabs.map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setDocModalTab(tab.id)}
+                            className={cn("px-3 py-1.5 text-xs font-medium transition-colors", modalEffective === tab.id ? "bg-acme-orange text-white" : "text-gray-500 hover:text-gray-700")}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null;
+                  })()}
                   <button
                     onClick={() => setDocModalOpen(false)}
                     className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
@@ -951,29 +1234,44 @@ export default function CaseDetailPage() {
                 </div>
               </div>
               {/* Modal Body */}
-              <div className="flex-1 flex flex-col min-h-0 p-5">
-                {docModalTab === "original" && renderOriginalContent(activeDoc, true)}
-                {docModalTab === "schema" && (
-                  <div className="bg-gray-900 rounded-lg p-5 border border-gray-700 overflow-auto flex-1 min-h-0">
-                    <pre className="text-xs text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
-                      {activeDoc.jsonSchema ? JSON.stringify(activeDoc.jsonSchema, null, 2) : "No JSON schema available for this document."}
-                    </pre>
+              {(() => {
+                const modalTabs = getDocTabs(activeDoc);
+                const modalExt = getFileExtension(activeDoc);
+                const modalActiveValid = modalTabs.some((t) => t.id === docModalTab);
+                const modalEffective = modalActiveValid ? docModalTab : "original";
+                return (
+                  <div className="flex-1 flex flex-col min-h-0 p-5">
+                    {modalEffective === "original" && renderOriginalContent(activeDoc, true)}
+                    {modalEffective === "schema" && (
+                      <div className="bg-gray-900 rounded-lg p-5 border border-gray-700 overflow-auto flex-1 min-h-0">
+                        <pre className="text-xs text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
+                          {activeDoc.jsonSchema ? JSON.stringify(activeDoc.jsonSchema, null, 2) : "No JSON schema available for this document."}
+                        </pre>
+                      </div>
+                    )}
+                    {modalEffective === "interpreted" && (
+                      modalExt === "csv" ? (
+                        fetchedFileContent[activeDoc.id] ? renderCsvTable(fetchedFileContent[activeDoc.id]) : (
+                          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 animate-spin text-acme-teal" />
+                            <span className="ml-2 text-xs text-gray-500">Loading table data...</span>
+                          </div>
+                        )
+                      ) : activeDoc.aiInterpretedMd ? (
+                        <div className="prose prose-sm max-w-none rounded-lg border border-acme-border bg-white p-5 overflow-auto flex-1 min-h-0 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                            {activeDoc.aiInterpretedMd}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 rounded-lg p-5 border border-gray-200 text-center">
+                          <p className="text-sm text-gray-500">No AI interpretations available for this document.</p>
+                        </div>
+                      )
+                    )}
                   </div>
-                )}
-                {docModalTab === "interpreted" && (
-                  activeDoc.aiInterpretedMd ? (
-                    <div className="prose prose-sm max-w-none rounded-lg border border-acme-border bg-white p-5 overflow-auto flex-1 min-h-0 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                        {activeDoc.aiInterpretedMd}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 rounded-lg p-5 border border-gray-200 text-center">
-                      <p className="text-sm text-gray-500">No AI interpretations available for this document.</p>
-                    </div>
-                  )
-                )}
-              </div>
+                );
+              })()}
             </motion.div>
           </motion.div>
         )}

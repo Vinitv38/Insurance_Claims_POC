@@ -90,9 +90,42 @@ CREATE TABLE IF NOT EXISTS fatal_overrides (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Assessments table (multiple AI assessment runs per claim)
+CREATE TABLE IF NOT EXISTS assessments (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  claim_id TEXT NOT NULL REFERENCES claims(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  assessment_date TEXT NOT NULL,
+  trigger TEXT NOT NULL DEFAULT 'Initial Intake',
+  complexity_score INTEGER NOT NULL DEFAULT 0,
+  vector_clinical INTEGER NOT NULL DEFAULT 0,
+  vector_documentation INTEGER NOT NULL DEFAULT 0,
+  vector_discrepancy INTEGER NOT NULL DEFAULT 0,
+  vector_behavioral INTEGER NOT NULL DEFAULT 0,
+  vector_clinical_label TEXT,
+  vector_documentation_label TEXT,
+  vector_discrepancy_label TEXT,
+  vector_behavioral_label TEXT,
+  system_recommendation TEXT,
+  score_driver TEXT,
+  routing_rationale TEXT,
+  contract_status TEXT,
+  elimination_period TEXT,
+  exclusions TEXT,
+  summary TEXT,
+  risk_indicators TEXT[],
+  recommended_action TEXT,
+  confidence_pct NUMERIC(5,1) NOT NULL DEFAULT 0,
+  documents_analyzed INTEGER NOT NULL DEFAULT 0,
+  clinical_profile_md TEXT,
+  ai_output_md TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_documents_claim_id ON documents(claim_id);
 CREATE INDEX IF NOT EXISTS idx_audit_history_claim_id ON audit_history(claim_id);
+CREATE INDEX IF NOT EXISTS idx_assessments_claim_id ON assessments(claim_id);
 CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
 CREATE INDEX IF NOT EXISTS idx_claims_claim_type ON claims(claim_type);
 

@@ -37,17 +37,17 @@ const claims = [
     policy_number: "LTC-884-9102A",
     claim_type: "Long-Term Care",
     date_of_birth: "1954-03-12",
-    age: 72,
+    age: 80,
     diagnosis: "Parkinson\u2019s Disease (G20)",
     status: "auto_approved",
     assigned_to: "Sarah Chen",
     assigned_group: "Junior Adjuster",
-    complexity_score: 15,
+    complexity_score: 13,
     vector_clinical: 20,
     vector_documentation: 5,
     vector_discrepancy: 0,
     vector_behavioral: 5,
-    summary: "72-year-old male with recently diagnosed Parkinson\u2019s Disease (Stage 3, Hoehn & Yahr). Presenting with moderate-to-severe bilateral tremors significantly impacting Activities of Daily Living: Bathing and Dressing. 90-day elimination period has been satisfied. All medical documentation is complete and internally consistent.",
+    summary: "80-year-old male with recently diagnosed Parkinson\u2019s Disease (Stage 3, Hoehn & Yahr). Presenting with moderate-to-severe bilateral tremors significantly impacting Activities of Daily Living: Bathing and Dressing. 90-day elimination period has been satisfied. All medical documentation is complete and internally consistent.",
     risk_indicators: [
       "None Detected. Clinical presentation matches 90-day Elimination Period requirements.",
       "All documents are complete with no missing pages.",
@@ -64,56 +64,53 @@ const claims = [
     claimant_name: "Robert Hargrove",
     policy_number: "LTC-912-6037B",
     claim_type: "Long-Term Care",
-    date_of_birth: "1945-08-22",
-    age: 81,
-    diagnosis: "Left Hip Fracture (S72.001A)",
-    status: "escalated",
-    assigned_to: "Dr. Karen Volkov",
-    assigned_group: "Tier 2 Clinical Investigator",
-    complexity_score: 98,
+    date_of_birth: "1951-08-22",
+    age: 74,
+    diagnosis: "Left Hip Contusion (S70.02XA)",
+    status: "in_review",
+    assigned_to: "Patricia Grant",
+    assigned_group: "Senior Adjuster",
+    complexity_score: 59,
     vector_clinical: 65,
-    vector_documentation: 92,
+    vector_documentation: 70,
     vector_discrepancy: 95,
-    vector_behavioral: 78,
-    summary: "81-year-old male presenting with left hip fracture post-ORIF. Multiple critical documentation gaps and evidence discrepancies detected. Discharge summary incomplete (1 of 4 pages). Faxed care plan partially illegible. Direct contradiction between current wheelchair claim and archived ambulatory status. Behavioral analysis flags inconsistent claimant narrative.",
+    vector_behavioral: 10,
+    summary: "Robert J. Hargrove, a 74-year-old male with a history of hypertension, hyperlipidemia, BPH, and bilateral knee osteoarthritis, initiated a long-term care claim following a mechanical fall at home on 03/09/2026. He self-reports new dependence on a wheelchair and need for assistance with bathing and transferring. However, medical records from the ED and subsequent PCP visit do not corroborate this sudden functional decline. The claim is further complicated by missing critical discharge documentation and the absence of a formal, post-fall ADL assessment, necessitating further investigation before benefit determination.",
     risk_indicators: [
-      "CRITICAL: Discharge summary missing pages 2-4 (surgical notes, medication list)",
-      "CRITICAL: Direct contradiction \u2014 wheelchair claim vs. archived ambulatory independence",
-      "WARNING: Fax OCR confidence 62% \u2014 below 85% threshold",
-      "WARNING: Behavioral sentiment shift detected in call transcript at 08:44",
-      "INFO: Pre-injury mobility description vague/evasive",
+      "CRITICAL: Narrative Conflict \u2014 Claimant self-reports wheelchair dependence but ED/PCP records show no loss of ambulation",
+      "CRITICAL: Documentation Gap \u2014 Missing pages 3-4 from ED Discharge Summary",
+      "WARNING: No formal ADL assessment or Plan of Care post-fall",
     ],
-    recommended_action: "ESCALATE TO TIER 2 INVESTIGATION. Do NOT approve. Request complete discharge summary from Epic. Order independent medical examination. Flag for potential SIU referral if contradictions are not resolved.",
-    elimination_period: "90-day \u2014 IN PROGRESS (Day 22 of 90)",
+    recommended_action: "PENDING FOR INFORMATION. Obtain missing ED Discharge Summary pages. Request contemporaneous ADL assessment and Plan of Care from licensed practitioner.",
+    elimination_period: "120 Days Elapsed / 90 Days Required",
     filing_date: "2026-04-10",
     last_updated: "2026-04-20",
   },
   {
     id: "claim-003",
-    claimant_name: "Margaret Chen",
+    claimant_name: "Darrell Dinkel",
     policy_number: "LTC-776-3341C",
     claim_type: "Long-Term Care",
-    date_of_birth: "1948-11-05",
-    age: 77,
-    diagnosis: "Alzheimer\u2019s Disease (G30.9)",
-    status: "in_review",
-    assigned_to: "Marcus Williams",
-    assigned_group: "Senior Adjuster",
-    complexity_score: 52,
-    vector_clinical: 45,
-    vector_documentation: 55,
-    vector_discrepancy: 30,
-    vector_behavioral: 40,
-    summary: "77-year-old female with moderate Alzheimer\u2019s Disease. MMSE 16/30 indicates significant cognitive decline. 4 ADL deficits documented. Elimination period in progress (Day 45 of 90). Home health assessment reveals missing pharmacy medication reconciliation. Single informal caregiver (husband) providing all ADL assistance.",
+    date_of_birth: "1947-03-15",
+    age: 79,
+    diagnosis: "Fibromyalgia, Arthritis, Prostate Cancer",
+    status: "auto_approved",
+    assigned_to: "Sarah Chen",
+    assigned_group: "Junior Adjuster",
+    complexity_score: 13,
+    vector_clinical: 10,
+    vector_documentation: 5,
+    vector_discrepancy: 0,
+    vector_behavioral: 0,
+    summary: "Darrell Dinkel, a 79-year-old widowed male residing alone in Aurora, CO, is seeking home health and community care benefits under an active, paid-up long-term care insurance policy. His primary disabling conditions include fibromyalgia, arthritis, prostate cancer, frequent falls, and incontinence, necessitating consistent assistance with multiple ADLs. All submitted documentation is current, corroborated, and free of contradictions or escalation risks, supporting a straightforward approval pathway.",
     risk_indicators: [
-      "WARNING: Medication management records incomplete \u2014 missing pharmacy reconciliation",
-      "INFO: Elimination period in progress \u2014 Day 45 of 90",
-      "INFO: Single informal caregiver \u2014 caregiver burden risk",
-      "INFO: Home safety hazards documented (loose rugs, no grab bars)",
+      "No active discrepancies or critical alerts identified.",
+      "Narrative Conflict: None. Functional, cognitive, and provider narratives are consistent across all documents.",
+      "Documentation Gap: None identified in summary, but a final check for signatures and completeness is recommended.",
     ],
-    recommended_action: "HOLD FOR REVIEW. Request pharmacy medication reconciliation. Monitor elimination period progress. Consider caregiver support assessment.",
-    elimination_period: "90-day \u2014 IN PROGRESS (Day 45 of 90)",
-    filing_date: "2026-04-08",
+    recommended_action: "APPROVE CLAIM. Verify that all required signatures are present on the intake form, plan of care, and BEA to ensure legal sufficiency before finalizing payment. Confirm that all pages of medical records and daily visit notes are present and legible.",
+    elimination_period: "92 Days Elapsed / 10 Days Required (Home Health Rider)",
+    filing_date: "2026-03-20",
     last_updated: "2026-04-10",
   },
   {
@@ -387,35 +384,35 @@ const documents = [
     ai_findings: ["Policy master document confirms coverage details", "Consistent with AS400 extract", "All policy terms verified"],
     json_schema: { documentType: "Policy_Master", policyNumber: "LTC-912-6037B", insured: "Robert J Hargrove", status: "ACTIVE" },
   },
-  // Chen documents (independent PDFs)
+  // Dinkel documents (independent PDFs)
   {
     id: "doc-c1", claim_id: "claim-003", name: "Policy.pdf", type: "other", day: 1, status: "processed", vector_affected: "documentation",
-    extracted_text: "INSURANCE POLICY DOCUMENT\nPolicy details for Margaret Chen case.\nLong Term Care \u2014 Individual Policy.\nCoverage and benefit terms outlined.",
-    ai_findings: ["Policy document uploaded for claim-003", "Coverage terms to be verified"],
+    extracted_text: "INSURANCE POLICY DOCUMENT\nPolicy details for Darrell Dinkel case.\nLong Term Care \u2014 Individual Policy.\nHome Health Rider included. Coverage and benefit terms outlined.",
+    ai_findings: ["Policy document uploaded for claim-003", "Active and paid-up as of March 20, 2026", "Home Health Rider with 10-day elimination period", "Coverage terms verified"],
     json_schema: { documentType: "Policy_Document", claimId: "claim-003" },
   },
   {
     id: "doc-c2", claim_id: "claim-003", name: "Claim_Form.pdf", type: "intake", day: 1, status: "processed", vector_affected: "clinical",
-    extracted_text: "CLAIM FORM\nClaim submission form for Margaret Chen.\nLong Term Care benefits claim.\nDocumentation of ADL deficits and care needs.",
-    ai_findings: ["Claim form submitted for claim-003", "ADL documentation to be reviewed"],
+    extracted_text: "CLAIM FORM\nClaim submission form for Darrell Dinkel.\nLong Term Care benefits claim \u2014 Home health and community care.\nPrimary conditions: fibromyalgia, arthritis, prostate cancer, frequent falls, incontinence.\nADL deficits: Bathing, Dressing, Toileting, Transferring, Continence, Ambulation.",
+    ai_findings: ["Claim form submitted for claim-003", "6 ADL deficits documented", "Multiple disabling conditions listed", "Consistent with clinical documentation"],
     json_schema: { documentType: "Claim_Form", claimId: "claim-003" },
   },
   {
     id: "doc-c3", claim_id: "claim-003", name: "BEA.pdf", type: "medical", day: 2, status: "processed", vector_affected: "clinical",
-    extracted_text: "BENEFIT ELIGIBILITY ASSESSMENT (BEA)\nAssessment of benefit eligibility for Margaret Chen.\nFunctional assessment and clinical evaluation results.",
-    ai_findings: ["BEA document uploaded", "Eligibility assessment to be reviewed"],
+    extracted_text: "BENEFIT ELIGIBILITY ASSESSMENT (BEA)\nAssessment of benefit eligibility for Darrell Dinkel.\nFunctional assessment confirms 6 ADL deficits requiring standby to hands-on assistance.\nCognitive: MMSE 23/30 (mild impairment range, not formally diagnosed).\nDME: Walker, shower bench, grab bars, briefs.",
+    ai_findings: ["BEA confirms eligibility", "6 ADL deficits documented and corroborated", "Cognitive mild impairment noted but not formally diagnosed", "DME usage consistent with clinical profile"],
     json_schema: { documentType: "Benefit_Eligibility_Assessment", claimId: "claim-003" },
   },
   {
     id: "doc-c4", claim_id: "claim-003", name: "Plan_of_Care.pdf", type: "care_plan", day: 3, status: "processed", vector_affected: "clinical",
-    extracted_text: "PLAN OF CARE\nCare plan for Margaret Chen.\nDetailed care instructions, therapy schedule, and provider coordination.",
-    ai_findings: ["Plan of care documented", "Care coordination details to be verified"],
+    extracted_text: "PLAN OF CARE\nCare plan for Darrell Dinkel.\nPaid home care from Extended Family Home Care (licensed agency) 3x/week.\nHospice nurse visits. Family support (unpaid).\nDME: walker, shower bench, grab bars, briefs, Bedit.",
+    ai_findings: ["Plan of care documented", "Licensed agency providing paid care \u2014 no family-care exclusion risk", "Hospice involvement noted", "Care coordination details verified"],
     json_schema: { documentType: "Plan_of_Care", claimId: "claim-003" },
   },
   {
     id: "doc-c5", claim_id: "claim-003", name: "Invoices_and_Daily_Visit_Notes.pdf", type: "medical", day: 4, status: "processed", vector_affected: "documentation",
-    extracted_text: "INVOICES AND DAILY VISIT NOTES\nCaregiver visit records and billing invoices for Margaret Chen.\nDaily care activities, time logs, and service charges.",
-    ai_findings: ["Invoice and visit notes documented", "Billing details to be verified against care plan"],
+    extracted_text: "INVOICES AND DAILY VISIT NOTES\nCaregiver visit records and billing invoices for Darrell Dinkel.\nExtended Family Home Care \u2014 3 visits/week.\nDaily care activities, time logs, and service charges documented.",
+    ai_findings: ["Invoice and visit notes documented", "Billing details consistent with care plan", "All visit notes present and legible"],
     json_schema: { documentType: "Invoices_and_Visit_Notes", claimId: "claim-003" },
   },
   // Torres documents
@@ -535,13 +532,17 @@ const auditHistory = [
   { claim_id: "claim-002", timestamp: "2026-04-20T09:01:00Z", action: "AI_SCORING", detail: "Final score: 98/100 \u2014 Critical complexity", score_change_from: 88, score_change_to: 98 },
   { claim_id: "claim-002", timestamp: "2026-04-20T09:02:00Z", action: "ESCALATED", detail: "Auto-escalated to Tier 2 Clinical Investigator (Dr. Karen Volkov)", user_name: "AI Engine" },
   { claim_id: "claim-002", timestamp: "2026-04-20T09:03:00Z", action: "FATAL_OVERRIDE", detail: "Fatal override triggered: DIRECT_CONTRADICTION + Score > 90 \u2192 Tier 2 Clinical", user_name: "Rules Engine" },
-  // Chen
-  { claim_id: "claim-003", timestamp: "2026-04-08T10:00:00Z", action: "CLAIM_CREATED", detail: "New LTC claim initiated", user_name: "System" },
-  { claim_id: "claim-003", timestamp: "2026-04-08T10:01:00Z", action: "AI_SCORING", detail: "Initial complexity score: 38/100", score_change_from: 0, score_change_to: 38 },
-  { claim_id: "claim-003", timestamp: "2026-04-09T11:00:00Z", action: "DOC_UPLOADED", detail: "Neuropsych_Evaluation_040926.pdf processed", user_name: "System" },
-  { claim_id: "claim-003", timestamp: "2026-04-09T11:01:00Z", action: "AI_SCORING", detail: "Score updated after neuropsych evaluation", score_change_from: 38, score_change_to: 45 },
-  { claim_id: "claim-003", timestamp: "2026-04-10T09:00:00Z", action: "DOC_UPLOADED", detail: "Home_Health_Assessment \u2014 medication records incomplete", user_name: "System" },
-  { claim_id: "claim-003", timestamp: "2026-04-10T09:01:00Z", action: "AI_SCORING", detail: "Score updated: documentation gap detected", score_change_from: 45, score_change_to: 52 },
+  { claim_id: "claim-002", timestamp: "2026-04-22T10:00:00Z", action: "DOC_UPLOADED", detail: "Epic_Discharge_MH7741903_New.pdf \u2014 Complete discharge summary re-uploaded (all pages)", user_name: "System" },
+  { claim_id: "claim-002", timestamp: "2026-04-22T10:01:00Z", action: "AI_SCORING", detail: "Reassessment triggered: Documentation gap resolved. Score decreased from 80 to 59.", score_change_from: 80, score_change_to: 59 },
+  { claim_id: "claim-002", timestamp: "2026-04-22T10:02:00Z", action: "DISCREPANCY_DETECTED", detail: "New contradiction: Hospital discharge shows claimant ambulatory with walker, family reports wheelchair-dependent. Severity clash requires field assessment.", user_name: "AI Engine" },
+  { claim_id: "claim-002", timestamp: "2026-04-22T10:03:00Z", action: "REASSIGNED", detail: "Claim re-routed: Downgraded from Tier 2 Clinical Investigator (Dr. Karen Volkov) to Senior Adjuster (Patricia Grant) due to reduced complexity (59) and closure of documentation gap.", user_name: "AI Engine" },
+  // Dinkel
+  { claim_id: "claim-003", timestamp: "2026-03-20T09:00:00Z", action: "CLAIM_CREATED", detail: "New LTC claim initiated \u2014 home health & community care benefits", user_name: "System" },
+  { claim_id: "claim-003", timestamp: "2026-03-20T09:01:00Z", action: "AI_SCORING", detail: "Initial complexity score: 10/100", score_change_from: 0, score_change_to: 10 },
+  { claim_id: "claim-003", timestamp: "2026-03-25T11:00:00Z", action: "DOC_UPLOADED", detail: "BEA and Plan of Care uploaded \u2014 all documentation complete and corroborated", user_name: "System" },
+  { claim_id: "claim-003", timestamp: "2026-03-25T11:01:00Z", action: "AI_SCORING", detail: "Score updated after full documentation review", score_change_from: 10, score_change_to: 13 },
+  { claim_id: "claim-003", timestamp: "2026-04-10T10:00:00Z", action: "AI_SCORING", detail: "Final score: 13/100 \u2014 Low complexity, no discrepancies", score_change_from: 13, score_change_to: 13 },
+  { claim_id: "claim-003", timestamp: "2026-04-10T10:01:00Z", action: "APPROVED", detail: "Claim approved \u2014 all clinical, documentation, and policy criteria met. Routed to Junior Adjuster (Sarah Chen) for administrative sign-off.", user_name: "AI Engine" },
   // Torres
   { claim_id: "claim-004", timestamp: "2026-04-09T15:00:00Z", action: "CLAIM_CREATED", detail: "New A&H claim initiated \u2014 motor vehicle collision", user_name: "System" },
   { claim_id: "claim-004", timestamp: "2026-04-09T15:01:00Z", action: "AI_SCORING", detail: "Initial complexity score: 30/100", score_change_from: 0, score_change_to: 30 },
@@ -590,6 +591,141 @@ const skillSets = [
   { id: "skill-4", name: "SIU Fraud Unit", description: "Handles critical-complexity claims with potential fraud indicators", min_score: 91, max_score: 100, user_count: 3, capacity_free: 33, color: "#EF4444" },
 ];
 
+const assessments = [
+  // Claim-001 (Pendelton) — clean case, single assessment (real EngaigeQ output)
+  {
+    id: "assess-p1",
+    claim_id: "claim-001",
+    label: "Initial Assessment",
+    assessment_date: "2026-04-08",
+    trigger: "Initial Intake",
+    complexity_score: 13,
+    vector_clinical: 10,
+    vector_documentation: 5,
+    vector_discrepancy: 0,
+    vector_behavioral: 0,
+    vector_clinical_label: "STABLE",
+    vector_documentation_label: "COMPLETE",
+    vector_discrepancy_label: "NO CONTRADICTION",
+    vector_behavioral_label: "CALM",
+    system_recommendation: "APPROVE CLAIM",
+    score_driver: "All clinical, functional, and documentation criteria are met with no discrepancies or exclusions; claimant demonstrates \u22652 ADL deficits with stable medical status.",
+    routing_rationale: "Complexity score of 13 falls within the Junior Adjuster threshold (0-31); Sarah Chen is underutilized (13.3% capacity) and available for immediate assignment, with no escalation triggers present.",
+    contract_status: "ACTIVE + 04/08/2026 06:00:03 CST",
+    elimination_period: "95 Days Elapsed / 90 Days Required",
+    exclusions: "No relevant exclusions detected",
+    summary: "Arthur Pendelton, an 80-year-old male with idiopathic Parkinson\u2019s disease (Hoehn and Yahr Stage II), is seeking benefits under a Comprehensive LTC - Plan B policy. The claim is supported by consistent documentation confirming moderate to maximum assistance required for bathing, dressing, and transferring, with no cognitive impairment. All policy, clinical, and procedural requirements are satisfied, and there are no discrepancies or behavioral escalation risks identified.",
+    risk_indicators: [
+      "No active discrepancies or critical alerts identified."
+    ],
+    recommended_action: "Initiate benefit payments per policy terms, retroactive to the date Elimination Period was satisfied (04/02/2026). Schedule standard 90-day clinical re-certification review; monitor for any change in ADL status or care environment.",
+    confidence_pct: 96.2,
+    documents_analyzed: 10,
+    clinical_profile_md: "### Verified Primary Diagnoses\n- Idiopathic Parkinson\u2019s disease (Hoehn and Yahr Stage II)\n- Essential Hypertension\n- Hyperlipidemia\n\n### ADL Deficits Requiring Assistance\n- **Bathing** \u2014 Moderate hands-on assist [VNA_Field_Data_Export_v2.csv]\n- **Dressing** \u2014 Moderate hands-on assist [VNA_Field_Data_Export_v2.csv]\n- **Transferring** \u2014 Maximum hands-on assist [VNA_Field_Data_Export_v2.csv]\n\n### Cognitive Status\nNo formal cognitive impairment; MMSE 29/30, fully oriented, normal clock-drawing [EHR_Voice_Trans_ID88492.txt]\n\n### Active Care & Living Status\n- Receives skilled nursing and home health aide services via Springfield Home Health Partners\n- Lives with spouse (wife is primary informal caregiver)\n- No major DME in use; referrals for PT/OT initiated",
+    ai_output_md: null,
+  },
+  // Claim-002 (Hargrove) — complex case, TWO assessments (real EngaigeQ output)
+  {
+    id: "assess-h1",
+    claim_id: "claim-002",
+    label: "Initial Assessment",
+    assessment_date: "2026-04-10",
+    trigger: "Initial Intake",
+    complexity_score: 80,
+    vector_clinical: 65,
+    vector_documentation: 70,
+    vector_discrepancy: 95,
+    vector_behavioral: 10,
+    vector_clinical_label: "SEVERE_DECLINE",
+    vector_documentation_label: "EXPIRED_RECENCY",
+    vector_discrepancy_label: "DIRECT_CONTRADICTION",
+    vector_behavioral_label: "CALM",
+    system_recommendation: "PENDING FOR INFORMATION",
+    score_driver: "Direct contradiction between claimant self-report and medical documentation, compounded by missing critical records and lack of a contemporaneous ADL assessment.",
+    routing_rationale: "The case complexity (score 80) and the presence of severe clinical volatility, direct evidence contradiction, and documentation gaps require assignment to a Tier 2 Clinical Investigator with expertise in orthopedics and mobility discrepancies. Dr. Volkov is under capacity and matches the case\u2019s risk profile, ensuring prompt and expert adjudication.",
+    contract_status: "ACTIVE + 04/08/2026 06:00:03 CST",
+    elimination_period: "120 Days Elapsed / 90 Days Required",
+    exclusions: "No relevant exclusions detected. Family care provider flag noted; policy excludes reimbursement for services by immediate family unless through a licensed agency.",
+    summary: "Robert J. Hargrove, a 74-year-old male with a history of hypertension, hyperlipidemia, BPH, and bilateral knee osteoarthritis, initiated a long-term care claim following a mechanical fall at home on 03/09/2026. He self-reports new dependence on a wheelchair and need for assistance with bathing and transferring. However, medical records from the ED and subsequent PCP visit do not corroborate this sudden functional decline. The claim is further complicated by missing critical discharge documentation and the absence of a formal, post-fall ADL assessment, necessitating further investigation before benefit determination.",
+    risk_indicators: [
+      "CRITICAL: Narrative Conflict \u2014 Claimant self-reports being \u201cstuck in a wheelchair\u201d and needing help with transferring (04/05/2026 Intake Form), but ED and PCP records (03/09/2026, 03/18/2026) document only superficial injury and no loss of ambulation or severe functional decline. [Intake Form vs. Epic_Discharge_MH7741903.pdf, RightFax_Inbound_11409.pdf]",
+      "CRITICAL: Documentation Gap \u2014 Missing pages (3 and 4) from the ED Discharge Summary likely contain essential nursing and DME notes. No formal ADL assessment or Plan of Care post-fall is present, violating policy requirements for benefit triggers. [Epic_Discharge_MH7741903.pdf]"
+    ],
+    recommended_action: "Obtain and review missing pages (3 and 4) of the Epic ED Discharge Summary to clarify post-fall functional status and any DME prescriptions. Request a contemporaneous ADL assessment and Plan of Care from a licensed health care practitioner to formally certify the claimant\u2019s inability to perform 2+ ADLs, as required by policy for benefit eligibility.",
+    confidence_pct: 82.1,
+    documents_analyzed: 9,
+    clinical_profile_md: "### Verified Primary Diagnoses\n- Essential hypertension\n- Hyperlipidemia\n- BPH\n- Bilateral knee osteoarthritis\n- Left hip contusion post-fall\n\n### ADL Deficits Requiring Assistance\n- **Bathing** \u2014 Standby/hands-on assist (claimed; not corroborated)\n- **Transferring** \u2014 Hands-on assist (claimed; not corroborated)\n- **Ambulation** \u2014 Claimed unable (wheelchair-bound); medical records indicate independent with cane pre-fall, no post-fall corroboration\n\n### Cognitive Status\nNo formal diagnosis; MMSE 28/30 in 2024; no cognitive or behavioral risks identified\n\n### Active Care & Living Status\n- Lives alone; uses shower seat, single-point cane (pre-fall), wheelchair (self-reported, not medically documented)\n- Daughter provides informal IADL support (meal prep, cleaning)",
+    ai_output_md: null,
+  },
+  // Claim-002 (Hargrove) — Reassessment (real EngaigeQ Delta output)
+  {
+    id: "assess-h2",
+    claim_id: "claim-002",
+    label: "Reassessment",
+    assessment_date: "2026-04-15",
+    trigger: "Document re-upload (Complete Discharge Summary)",
+    complexity_score: 59,
+    vector_clinical: 65,
+    vector_documentation: 25,
+    vector_discrepancy: 90,
+    vector_behavioral: 15,
+    vector_clinical_label: "STABLE",
+    vector_documentation_label: "COMPLETE",
+    vector_discrepancy_label: "DIRECT_CONTRADICTION",
+    vector_behavioral_label: "CALM",
+    system_recommendation: "RE-ROUTED",
+    score_driver: "Complexity Score decreased and claim re-routed due to closure of documentation gap and emergence of a direct clinical contradiction between hospital records and family report.",
+    routing_rationale: "Assignment downgraded from Tier 2 Clinical Investigator (Dr. Karen Volkov) to Senior Adjuster (Patricia Grant) due to reduced complexity and closure of evidentiary gaps.",
+    contract_status: "ACTIVE + 04/08/2026 06:00:03 CST",
+    elimination_period: "120 Days Elapsed / 90 Days Required",
+    exclusions: "No relevant exclusions detected. Family care provider flag noted; policy excludes reimbursement for services by immediate family unless through a licensed agency.",
+    summary: "The newly appended Epic_Discharge_MH7741903_New.pdf provides a complete, final, and signed emergency department record for Robert Hargrove\u2019s 03/09/2026 encounter, including detailed clinical findings, imaging, physical therapy assessment, and discharge instructions. This closes the prior gap of missing hospital records but introduces a direct contradiction with the family\u2019s report of severe functional decline, as documented in the Genesys call transcript.",
+    risk_indicators: [
+      "RESOLVED: The previously missing or incomplete hospital record has been fully satisfied by the new, complete, and authenticated discharge document, eliminating the structural documentation gap that was delaying benefit activation.",
+      "CRITICAL: Direct Contradiction \u2014 Hospital discharge assessment documents claimant ambulates 50 feet with a walker, minimal assistance, no wheelchair prescribed. Family reports claimant is non-weight-bearing, requires two-person transfers, and is wheelchair-dependent. This introduces a timeline conflict regarding functional status immediately post-discharge versus current state. [Epic_Discharge_MH7741903_New.pdf vs. Genesys call transcript]"
+    ],
+    recommended_action: "Initiate Independent Field Assessment: Do not rely solely on verbal testimony to resolve this severity clash. Immediately order a face-to-face, independent Visiting Nurse Association (VNA) evaluation at the claimant\u2019s residence to definitively assess current ADL capabilities, verify wheelchair dependence, and document actual transfer assistance needs. Fax a formal inquiry to the Primary Care Provider (Dr. Margaret Okonkwo) requesting any interim clinical notes generated between the 03/09/2026 hospital discharge and today, specifically inquiring if she formally prescribed the wheelchair the family is currently renting. Do not activate benefit payments until the VNA results are reconciled against the hospital baseline.",
+    confidence_pct: 85.4,
+    documents_analyzed: 10,
+    clinical_profile_md: "### Newly Verified Diagnoses\nNone identified in the new evidence.\n\n### ADL Shifts\nThe hospital record documents the claimant as ambulatory with minimal assistance and no need for a wheelchair at discharge, while the family asserts a total loss of ambulation and need for two-person assistance at home. This represents a severe functional status contradiction requiring further investigation.\n\n### Active Care Updates\nNo new skilled services or DME were prescribed at discharge; specifically, a wheelchair was denied as not medically necessary. The family, however, reports renting a wheelchair and urgent need for home health aide support.",
+    ai_output_md: null,
+  },
+  // Claim-003 (Dinkel) — clean case, single assessment (real EngaigeQ output)
+  {
+    id: "assess-d1",
+    claim_id: "claim-003",
+    label: "Initial Assessment",
+    assessment_date: "2026-04-10",
+    trigger: "Initial Intake",
+    complexity_score: 13,
+    vector_clinical: 10,
+    vector_documentation: 5,
+    vector_discrepancy: 0,
+    vector_behavioral: 0,
+    vector_clinical_label: "STABLE",
+    vector_documentation_label: "COMPLETE",
+    vector_discrepancy_label: "NO_CONTRADICTION",
+    vector_behavioral_label: "CALM",
+    system_recommendation: "APPROVE CLAIM",
+    score_driver: "Stable clinical profile, complete documentation, no evidence discrepancies, and calm claimant behavior",
+    routing_rationale: "Complexity score of 13 falls within the fast-track range for Junior Adjusters; Sarah Chen is underutilized and available, ensuring efficient processing without escalation.",
+    contract_status: "Active + Verified as of March 20, 2026",
+    elimination_period: "92 Days Elapsed / 10 Days Required (Home Health Rider)",
+    exclusions: "No relevant exclusions detected; all services and diagnoses are covered, and paid care is provided by a licensed agency, not family.",
+    summary: "Darrell Dinkel, a 79-year-old widowed male residing alone in Aurora, CO, is seeking home health and community care benefits under an active, paid-up long-term care insurance policy. His primary disabling conditions include fibromyalgia, arthritis, prostate cancer, frequent falls, and incontinence, necessitating consistent assistance with multiple ADLs. All submitted documentation is current, corroborated, and free of contradictions or escalation risks, supporting a straightforward approval pathway.",
+    risk_indicators: [
+      "No active discrepancies or critical alerts identified.",
+      "Narrative Conflict: None. Functional, cognitive, and provider narratives are consistent across all documents.",
+      "Documentation Gap: None identified in summary, but a final check for signatures and completeness of all records is recommended to ensure legal sufficiency."
+    ],
+    recommended_action: "Verify that all required signatures are present on the intake form, plan of care, and BEA to ensure legal sufficiency before finalizing payment. Confirm that all pages of medical records and daily visit notes are present and legible; flag any missing or incomplete documentation for immediate follow-up.",
+    confidence_pct: 97.8,
+    documents_analyzed: 5,
+    clinical_profile_md: "### Verified Primary Diagnoses\n- Fibromyalgia\n- Arthritis\n- Prostate cancer\n- Frequent falls\n- Incontinence\n- Heart disease\n- Hypertension\n- Sleep apnea\n- Macular degeneration\n- Depression\n\n### ADL Deficits Requiring Assistance\n- **Bathing** \u2014 Standby assist\n- **Dressing** \u2014 Hands-on assist\n- **Toileting** \u2014 Standby assist\n- **Transferring** \u2014 Standby assist\n- **Continence** \u2014 Standby/seldom assist\n- **Ambulation** \u2014 Standby assist with DME\n\n### Cognitive Status\nNo formal cognitive impairment diagnosis; MMSE 23/30 (mild impairment range, not formally diagnosed); no dementia medications prescribed\n\n### Active Care & Living Status\n- Lives alone; receives paid home care from a licensed agency (Extended Family Home Care) 3x/week\n- Unpaid family support, hospice nurse visits\n- Uses walker, shower bench, grab bars, briefs, and Bedit",
+    ai_output_md: null,
+  },
+];
+
 const fatalOverrides = [
   { id: "override-1", condition: "Evidence Discrepancy", operator: "==", value: "DIRECT_CONTRADICTION", and_condition: "Total Score", and_operator: ">", and_value: "90", then_action: "Route to Tier 2 Clinical", is_active: true },
   { id: "override-2", condition: "Documentation Completeness", operator: "==", value: "CRITICAL_MISSING_PAGES", and_condition: "Clinical Vector", and_operator: ">", and_value: "60", then_action: "Hold for Manual Review", is_active: true },
@@ -603,6 +739,7 @@ async function seed() {
 
   // Clear existing data (in reverse dependency order)
   console.log("Clearing existing data...");
+  await supabase.from("assessments").delete().neq("id", "");
   await supabase.from("audit_history").delete().neq("id", "");
   await supabase.from("documents").delete().neq("id", "");
   await supabase.from("claims").delete().neq("id", "");
@@ -619,14 +756,28 @@ async function seed() {
   }
   console.log(`  Inserted ${claims.length} claims.\n`);
 
-  // Insert documents
+  // Insert documents — auto-populate file_path and ai_interpreted_md
+  // so that re-seeding never wipes these fields
   console.log("Inserting documents...");
-  const { error: docsError } = await supabase.from("documents").insert(documents);
+  const claimsWithStorage = ["claim-001", "claim-002", "claim-003"];
+  const enrichedDocs = documents.map((doc) => {
+    const hasStorage = claimsWithStorage.includes(doc.claim_id);
+    return {
+      ...doc,
+      // Generate file_path from Supabase Storage public URL if the claim has uploaded files
+      file_path: hasStorage
+        ? `${supabaseUrl}/storage/v1/object/public/documents/${doc.claim_id}/${doc.name}`
+        : (doc as Record<string, unknown>).file_path ?? null,
+      // Use extracted_text as ai_interpreted_md fallback
+      ai_interpreted_md: (doc as Record<string, unknown>).ai_interpreted_md ?? doc.extracted_text ?? null,
+    };
+  });
+  const { error: docsError } = await supabase.from("documents").insert(enrichedDocs);
   if (docsError) {
     console.error("  Error inserting documents:", docsError.message);
     return;
   }
-  console.log(`  Inserted ${documents.length} documents.\n`);
+  console.log(`  Inserted ${enrichedDocs.length} documents.\n`);
 
   // Insert audit history
   console.log("Inserting audit history...");
@@ -654,6 +805,15 @@ async function seed() {
     return;
   }
   console.log(`  Inserted ${fatalOverrides.length} fatal overrides.\n`);
+
+  // Insert assessments
+  console.log("Inserting assessments...");
+  const { error: assessError } = await supabase.from("assessments").insert(assessments);
+  if (assessError) {
+    console.error("  Error inserting assessments:", assessError.message);
+    return;
+  }
+  console.log(`  Inserted ${assessments.length} assessments.\n`);
 
   console.log("Seed complete! All data inserted successfully.");
 }
