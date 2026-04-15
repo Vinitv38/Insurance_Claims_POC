@@ -62,6 +62,8 @@ export default function CaseDetailPage() {
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [docModalTab, setDocModalTab] = useState<DocViewTab>("original");
   const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(null);
+  const [fetchedFileContent, setFetchedFileContent] = useState<Record<string, string>>({});
+  const [fetchingFile, setFetchingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
 
@@ -71,6 +73,22 @@ export default function CaseDetailPage() {
       setSelectedDocs(new Set(currentCase.documents.map((d) => d.id)));
     }
   }, [currentCase]);
+
+  // Fetch actual file content for TXT/JSON/CSV when a document is selected
+  useEffect(() => {
+    if (!activeDoc) return;
+    const ext = (activeDoc.name || "").split(".").pop()?.toLowerCase() || "";
+    if (["txt", "json", "csv"].includes(ext) && activeDoc.filePath && !fetchedFileContent[activeDoc.id]) {
+      setFetchingFile(true);
+      fetch(activeDoc.filePath)
+        .then((res) => res.text())
+        .then((text) => {
+          setFetchedFileContent((prev) => ({ ...prev, [activeDoc.id]: text }));
+          setFetchingFile(false);
+        })
+        .catch(() => setFetchingFile(false));
+    }
+  }, [activeDoc, fetchedFileContent]);
 
   // Auto-hide toast after 4 seconds
   useEffect(() => {
@@ -205,6 +223,7 @@ export default function CaseDetailPage() {
       }
 
       if (ext === "txt") {
+        const content = fetchedFileContent[doc.id] || null;
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -218,21 +237,26 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-              {doc.extractedText?.split("\n").map((line, i) => {
-                const isHighlighted = line.includes("MISSING") || line.includes("FAILED") || line.includes("CRITICAL") || line.includes("CONTRADICTION") || line.includes("wheelchair") || line.includes("HANDWRITTEN") || line.includes("OCR") || line.includes("SENTIMENT");
-                return (
-                  <div key={i} className={cn("py-0.5", isHighlighted && "bbox-highlight px-1 my-1")}>
-                    {line}
-                  </div>
-                );
-              })}
-            </div>
+            {fetchingFile && !content ? (
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border flex items-center justify-center" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <Loader2 className="w-5 h-5 animate-spin text-acme-teal" />
+                <span className="ml-2 text-xs text-gray-500">Loading file content...</span>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto whitespace-pre-wrap" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                {content || doc.extractedText || "No content available."}
+              </div>
+            )}
           </div>
         );
       }
 
       if (ext === "json") {
+        const content = fetchedFileContent[doc.id] || null;
+        let formatted = content;
+        if (content) {
+          try { formatted = JSON.stringify(JSON.parse(content), null, 2); } catch { formatted = content; }
+        }
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -246,16 +270,24 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-              <pre className="text-[11px] text-cyan-400 font-mono leading-relaxed whitespace-pre-wrap">
-                {doc.extractedText || "Loading JSON content..."}
-              </pre>
-            </div>
+            {fetchingFile && !content ? (
+              <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 flex items-center justify-center" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+                <span className="ml-2 text-xs text-gray-400">Loading file content...</span>
+              </div>
+            ) : (
+              <div className="bg-acme-dark rounded-lg p-4 border border-gray-700 overflow-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <pre className="text-[11px] text-cyan-400 font-mono leading-relaxed whitespace-pre-wrap">
+                  {formatted || doc.extractedText || "No content available."}
+                </pre>
+              </div>
+            )}
           </div>
         );
       }
 
       if (ext === "csv") {
+        const content = fetchedFileContent[doc.id] || null;
         return (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -269,11 +301,16 @@ export default function CaseDetailPage() {
                 </a>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
-              {doc.extractedText?.split("\n").map((line, i) => (
-                <div key={i} className="py-0.5">{line}</div>
-              ))}
-            </div>
+            {fetchingFile && !content ? (
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border flex items-center justify-center" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                <Loader2 className="w-5 h-5 animate-spin text-acme-teal" />
+                <span className="ml-2 text-xs text-gray-500">Loading file content...</span>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed overflow-y-auto whitespace-pre-wrap" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                {content || doc.extractedText || "No content available."}
+              </div>
+            )}
           </div>
         );
       }
@@ -323,8 +360,76 @@ export default function CaseDetailPage() {
     );
   }
 
-  /* Helper to render the document viewer with 3 tabs */
+  /* Helper: parse CSV text into a table */
+  function renderCsvTable(csvText: string) {
+    const lines = csvText.trim().split("\n").filter((l) => l.trim());
+    if (lines.length === 0) return <p className="text-xs text-gray-500">No data to display.</p>;
+    const parseRow = (row: string) => {
+      const cells: string[] = [];
+      let current = "";
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i];
+        if (ch === '"') { inQuotes = !inQuotes; }
+        else if (ch === "," && !inQuotes) { cells.push(current.trim()); current = ""; }
+        else { current += ch; }
+      }
+      cells.push(current.trim());
+      return cells;
+    };
+    const headers = parseRow(lines[0]);
+    const rows = lines.slice(1).map(parseRow);
+    return (
+      <div className="overflow-auto rounded-lg border border-acme-border" style={{ maxHeight: 'calc(100vh - 260px)' }}>
+        <table className="w-full text-[11px] border-collapse">
+          <thead className="bg-acme-teal text-white sticky top-0">
+            <tr>
+              {headers.map((h, i) => (
+                <th key={i} className="px-3 py-2 text-left font-semibold whitespace-nowrap border-r border-acme-teal/30 last:border-r-0">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, ri) => (
+              <tr key={ri} className={cn("border-b border-gray-200", ri % 2 === 0 ? "bg-white" : "bg-gray-50")}>
+                {row.map((cell, ci) => (
+                  <td key={ci} className="px-3 py-1.5 text-gray-600 whitespace-nowrap border-r border-gray-200 last:border-r-0">{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  /* Helper: determine which tabs to show based on file extension */
+  function getDocTabs(doc: Document): { id: DocViewTab; label: string; icon: React.ReactNode }[] {
+    const ext = getFileExtension(doc);
+    if (ext === "txt" || ext === "json") {
+      return [{ id: "original", label: "Original", icon: <FileType className="w-3 h-3" /> }];
+    }
+    if (ext === "csv") {
+      return [
+        { id: "original", label: "Original", icon: <FileType className="w-3 h-3" /> },
+        { id: "interpreted", label: "Interpreted", icon: <Brain className="w-3 h-3" /> },
+      ];
+    }
+    // PDF and all others: show all 3 tabs
+    return [
+      { id: "original", label: "Original", icon: <FileType className="w-3 h-3" /> },
+      { id: "schema", label: "JSON Schema", icon: <Code className="w-3 h-3" /> },
+      { id: "interpreted", label: "AI Interpreted", icon: <Brain className="w-3 h-3" /> },
+    ];
+  }
+
+  /* Helper to render the document viewer with conditional tabs */
   function renderDocumentViewer(doc: Document) {
+    const tabs = getDocTabs(doc);
+    const ext = getFileExtension(doc);
+    const activeTabValid = tabs.some((t) => t.id === docViewTab);
+    const effectiveTab = activeTabValid ? docViewTab : "original";
+
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -338,36 +443,29 @@ export default function CaseDetailPage() {
           </div>
           <StatusBadge status={doc.status} />
         </div>
-        {/* 3-Tab Document Viewer */}
-        <div className="flex items-center gap-1 border-b border-acme-border">
-          <button
-            onClick={() => setDocViewTab("original")}
-            className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px", docViewTab === "original" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
-          >
-            <FileType className="w-3 h-3" /> Original
-          </button>
-          <button
-            onClick={() => setDocViewTab("schema")}
-            className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px", docViewTab === "schema" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
-          >
-            <Code className="w-3 h-3" /> JSON Schema
-          </button>
-          <button
-            onClick={() => setDocViewTab("interpreted")}
-            className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px", docViewTab === "interpreted" ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
-          >
-            <Brain className="w-3 h-3" /> AI Interpreted
-          </button>
-        </div>
+        {/* Conditional tabs based on file type */}
+        {tabs.length > 1 && (
+          <div className="flex items-center gap-1 border-b border-acme-border">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setDocViewTab(tab.id)}
+                className={cn("flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px", effectiveTab === tab.id ? "border-acme-orange text-acme-orange" : "border-transparent text-gray-500 hover:text-gray-700")}
+              >
+                {tab.icon} {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
-          {docViewTab === "original" && (
+          {effectiveTab === "original" && (
             <motion.div key="original" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               {renderOriginalContent(doc)}
             </motion.div>
           )}
 
-          {docViewTab === "schema" && (
+          {effectiveTab === "schema" && (
             <motion.div key="schema" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 overflow-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
                 <pre className="text-[11px] text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
@@ -377,9 +475,17 @@ export default function CaseDetailPage() {
             </motion.div>
           )}
 
-          {docViewTab === "interpreted" && (
+          {effectiveTab === "interpreted" && (
             <motion.div key="interpreted" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              {doc.aiInterpretedMd ? (
+              {ext === "csv" ? (
+                // CSV Interpreted: render as table
+                fetchedFileContent[doc.id] ? renderCsvTable(fetchedFileContent[doc.id]) : (
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-acme-teal" />
+                    <span className="ml-2 text-xs text-gray-500">Loading table data...</span>
+                  </div>
+                )
+              ) : doc.aiInterpretedMd ? (
                 <div className="prose prose-sm max-w-none overflow-y-auto rounded-lg border border-acme-border bg-white p-4 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50" style={{ maxHeight: 'calc(100vh - 260px)' }}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                     {doc.aiInterpretedMd}
@@ -1100,26 +1206,24 @@ export default function CaseDetailPage() {
                 <h2 className="text-sm font-semibold text-acme-teal">{activeDoc.name}</h2>
                 <StatusBadge status={activeDoc.status} />
                 <div className="ml-auto flex items-center gap-2">
-                  <div className="flex items-center gap-1 border border-acme-border rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => setDocModalTab("original")}
-                      className={cn("px-3 py-1.5 text-xs font-medium transition-colors", docModalTab === "original" ? "bg-acme-orange text-white" : "text-gray-500 hover:text-gray-700")}
-                    >
-                      Original
-                    </button>
-                    <button
-                      onClick={() => setDocModalTab("schema")}
-                      className={cn("px-3 py-1.5 text-xs font-medium transition-colors", docModalTab === "schema" ? "bg-acme-orange text-white" : "text-gray-500 hover:text-gray-700")}
-                    >
-                      JSON Schema
-                    </button>
-                    <button
-                      onClick={() => setDocModalTab("interpreted")}
-                      className={cn("px-3 py-1.5 text-xs font-medium transition-colors", docModalTab === "interpreted" ? "bg-acme-orange text-white" : "text-gray-500 hover:text-gray-700")}
-                    >
-                      AI Interpreted
-                    </button>
-                  </div>
+                  {(() => {
+                    const modalTabs = getDocTabs(activeDoc);
+                    const modalActiveValid = modalTabs.some((t) => t.id === docModalTab);
+                    const modalEffective = modalActiveValid ? docModalTab : "original";
+                    return modalTabs.length > 1 ? (
+                      <div className="flex items-center gap-1 border border-acme-border rounded-lg overflow-hidden">
+                        {modalTabs.map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setDocModalTab(tab.id)}
+                            className={cn("px-3 py-1.5 text-xs font-medium transition-colors", modalEffective === tab.id ? "bg-acme-orange text-white" : "text-gray-500 hover:text-gray-700")}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null;
+                  })()}
                   <button
                     onClick={() => setDocModalOpen(false)}
                     className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
@@ -1129,29 +1233,44 @@ export default function CaseDetailPage() {
                 </div>
               </div>
               {/* Modal Body */}
-              <div className="flex-1 flex flex-col min-h-0 p-5">
-                {docModalTab === "original" && renderOriginalContent(activeDoc, true)}
-                {docModalTab === "schema" && (
-                  <div className="bg-gray-900 rounded-lg p-5 border border-gray-700 overflow-auto flex-1 min-h-0">
-                    <pre className="text-xs text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
-                      {activeDoc.jsonSchema ? JSON.stringify(activeDoc.jsonSchema, null, 2) : "No JSON schema available for this document."}
-                    </pre>
+              {(() => {
+                const modalTabs = getDocTabs(activeDoc);
+                const modalExt = getFileExtension(activeDoc);
+                const modalActiveValid = modalTabs.some((t) => t.id === docModalTab);
+                const modalEffective = modalActiveValid ? docModalTab : "original";
+                return (
+                  <div className="flex-1 flex flex-col min-h-0 p-5">
+                    {modalEffective === "original" && renderOriginalContent(activeDoc, true)}
+                    {modalEffective === "schema" && (
+                      <div className="bg-gray-900 rounded-lg p-5 border border-gray-700 overflow-auto flex-1 min-h-0">
+                        <pre className="text-xs text-gray-100 font-mono leading-relaxed whitespace-pre-wrap">
+                          {activeDoc.jsonSchema ? JSON.stringify(activeDoc.jsonSchema, null, 2) : "No JSON schema available for this document."}
+                        </pre>
+                      </div>
+                    )}
+                    {modalEffective === "interpreted" && (
+                      modalExt === "csv" ? (
+                        fetchedFileContent[activeDoc.id] ? renderCsvTable(fetchedFileContent[activeDoc.id]) : (
+                          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 animate-spin text-acme-teal" />
+                            <span className="ml-2 text-xs text-gray-500">Loading table data...</span>
+                          </div>
+                        )
+                      ) : activeDoc.aiInterpretedMd ? (
+                        <div className="prose prose-sm max-w-none rounded-lg border border-acme-border bg-white p-5 overflow-auto flex-1 min-h-0 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                            {activeDoc.aiInterpretedMd}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 rounded-lg p-5 border border-gray-200 text-center">
+                          <p className="text-sm text-gray-500">No AI interpretations available for this document.</p>
+                        </div>
+                      )
+                    )}
                   </div>
-                )}
-                {docModalTab === "interpreted" && (
-                  activeDoc.aiInterpretedMd ? (
-                    <div className="prose prose-sm max-w-none rounded-lg border border-acme-border bg-white p-5 overflow-auto flex-1 min-h-0 prose-headings:text-acme-teal prose-headings:font-semibold prose-p:text-gray-600 prose-li:text-gray-600 prose-strong:text-gray-800 prose-code:text-acme-orange prose-code:bg-orange-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-table:border-collapse prose-td:border prose-td:border-gray-300 prose-td:px-3 prose-td:py-1.5 prose-th:border prose-th:border-gray-300 prose-th:px-3 prose-th:py-1.5 prose-th:bg-gray-50">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                        {activeDoc.aiInterpretedMd}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 rounded-lg p-5 border border-gray-200 text-center">
-                      <p className="text-sm text-gray-500">No AI interpretations available for this document.</p>
-                    </div>
-                  )
-                )}
-              </div>
+                );
+              })()}
             </motion.div>
           </motion.div>
         )}
