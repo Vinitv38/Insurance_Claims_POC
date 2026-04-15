@@ -654,7 +654,39 @@ const assessments = [
     clinical_profile_md: "### Verified Primary Diagnoses\n- Essential hypertension\n- Hyperlipidemia\n- BPH\n- Bilateral knee osteoarthritis\n- Left hip contusion post-fall\n\n### ADL Deficits Requiring Assistance\n- **Bathing** \u2014 Standby/hands-on assist (claimed; not corroborated)\n- **Transferring** \u2014 Hands-on assist (claimed; not corroborated)\n- **Ambulation** \u2014 Claimed unable (wheelchair-bound); medical records indicate independent with cane pre-fall, no post-fall corroboration\n\n### Cognitive Status\nNo formal diagnosis; MMSE 28/30 in 2024; no cognitive or behavioral risks identified\n\n### Active Care & Living Status\n- Lives alone; uses shower seat, single-point cane (pre-fall), wheelchair (self-reported, not medically documented)\n- Daughter provides informal IADL support (meal prep, cleaning)",
     ai_output_md: null,
   },
-  /* assess-h2 removed — awaiting real EngaigeQ Reassessment output */
+  // Claim-002 (Hargrove) — Reassessment (real EngaigeQ Delta output)
+  {
+    id: "assess-h2",
+    claim_id: "claim-002",
+    label: "Reassessment",
+    assessment_date: "2026-04-15",
+    trigger: "Document re-upload (Complete Discharge Summary)",
+    complexity_score: 59,
+    vector_clinical: 65,
+    vector_documentation: 25,
+    vector_discrepancy: 90,
+    vector_behavioral: 15,
+    vector_clinical_label: "STABLE",
+    vector_documentation_label: "COMPLETE",
+    vector_discrepancy_label: "DIRECT_CONTRADICTION",
+    vector_behavioral_label: "CALM",
+    system_recommendation: "RE-ROUTED",
+    score_driver: "Complexity Score decreased and claim re-routed due to closure of documentation gap and emergence of a direct clinical contradiction between hospital records and family report.",
+    routing_rationale: "Assignment downgraded from Tier 2 Clinical Investigator (Dr. Karen Volkov) to Senior Adjuster (Patricia Grant) due to reduced complexity and closure of evidentiary gaps.",
+    contract_status: "ACTIVE + 04/08/2026 06:00:03 CST",
+    elimination_period: "120 Days Elapsed / 90 Days Required",
+    exclusions: "No relevant exclusions detected. Family care provider flag noted; policy excludes reimbursement for services by immediate family unless through a licensed agency.",
+    summary: "The newly appended Epic_Discharge_MH7741903_New.pdf provides a complete, final, and signed emergency department record for Robert Hargrove\u2019s 03/09/2026 encounter, including detailed clinical findings, imaging, physical therapy assessment, and discharge instructions. This closes the prior gap of missing hospital records but introduces a direct contradiction with the family\u2019s report of severe functional decline, as documented in the Genesys call transcript.",
+    risk_indicators: [
+      "RESOLVED: The previously missing or incomplete hospital record has been fully satisfied by the new, complete, and authenticated discharge document, eliminating the structural documentation gap that was delaying benefit activation.",
+      "CRITICAL: Direct Contradiction \u2014 Hospital discharge assessment documents claimant ambulates 50 feet with a walker, minimal assistance, no wheelchair prescribed. Family reports claimant is non-weight-bearing, requires two-person transfers, and is wheelchair-dependent. This introduces a timeline conflict regarding functional status immediately post-discharge versus current state. [Epic_Discharge_MH7741903_New.pdf vs. Genesys call transcript]"
+    ],
+    recommended_action: "Initiate Independent Field Assessment: Do not rely solely on verbal testimony to resolve this severity clash. Immediately order a face-to-face, independent Visiting Nurse Association (VNA) evaluation at the claimant\u2019s residence to definitively assess current ADL capabilities, verify wheelchair dependence, and document actual transfer assistance needs. Fax a formal inquiry to the Primary Care Provider (Dr. Margaret Okonkwo) requesting any interim clinical notes generated between the 03/09/2026 hospital discharge and today, specifically inquiring if she formally prescribed the wheelchair the family is currently renting. Do not activate benefit payments until the VNA results are reconciled against the hospital baseline.",
+    confidence_pct: 85.4,
+    documents_analyzed: 10,
+    clinical_profile_md: "### Newly Verified Diagnoses\nNone identified in the new evidence.\n\n### ADL Shifts\nThe hospital record documents the claimant as ambulatory with minimal assistance and no need for a wheelchair at discharge, while the family asserts a total loss of ambulation and need for two-person assistance at home. This represents a severe functional status contradiction requiring further investigation.\n\n### Active Care Updates\nNo new skilled services or DME were prescribed at discharge; specifically, a wheelchair was denied as not medically necessary. The family, however, reports renting a wheelchair and urgent need for home health aide support.",
+    ai_output_md: null,
+  },
 ];
 
 const fatalOverrides = [
