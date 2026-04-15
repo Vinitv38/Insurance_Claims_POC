@@ -515,33 +515,6 @@ export default function CaseDetailPage() {
             )}
 
             <div className="p-5 space-y-6">
-              {/* Assessment Score Badge + Score Driver */}
-              {activeAssessment && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className={cn("text-xs font-bold px-2.5 py-1 rounded",
-                      assessmentScore <= 30 ? "bg-green-50 text-green-700 border border-green-200" :
-                      assessmentScore <= 60 ? "bg-amber-50 text-amber-700 border border-amber-200" :
-                      assessmentScore <= 80 ? "bg-acme-orange/10 text-acme-orange border border-acme-orange/20" :
-                      "bg-red-50 text-red-700 border border-red-200"
-                    )}>
-                      Score: {assessmentScore}/100
-                    </span>
-                    <span className="text-[10px] text-gray-400">
-                      {activeAssessment.documentsAnalyzed} documents analyzed
-                    </span>
-                    {assessments.length > 1 && assessments.indexOf(activeAssessment) > 0 && (
-                      <span className="text-[10px] font-mono text-acme-orange">
-                        {assessments[assessments.indexOf(activeAssessment) - 1].complexityScore} {"\u2192"} {assessmentScore}
-                      </span>
-                    )}
-                  </div>
-                  {activeAssessment.scoreDriver && (
-                    <p className="text-[11px] text-gray-500 leading-relaxed italic">{activeAssessment.scoreDriver}</p>
-                  )}
-                </div>
-              )}
-
               {/* 1. Clinical Synopsis (Executive Summary) */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -619,11 +592,11 @@ export default function CaseDetailPage() {
               {activeAssessment?.clinicalProfileMd && (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <FileSearch className="w-4 h-4 text-purple-500" />
-                    <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wider">Clinical & Functional Profile</h3>
+                    <FileSearch className="w-4 h-4 text-acme-teal" />
+                    <h3 className="text-xs font-bold text-acme-teal uppercase tracking-wider">Clinical & Functional Profile</h3>
                   </div>
-                  <div className="bg-purple-50/50 rounded-lg p-4 border border-purple-200/50 prose prose-sm max-w-none
-                    prose-headings:text-xs prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wider prose-headings:text-purple-700 prose-headings:mt-4 prose-headings:mb-2 first:prose-headings:mt-0
+                  <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50 prose prose-sm max-w-none
+                    prose-headings:text-xs prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wider prose-headings:text-acme-teal prose-headings:mt-4 prose-headings:mb-2 first:prose-headings:mt-0
                     prose-li:text-sm prose-li:text-gray-700 prose-li:my-0.5
                     prose-p:text-sm prose-p:text-gray-600 prose-p:leading-relaxed
                     prose-strong:text-gray-800">
@@ -702,51 +675,35 @@ export default function CaseDetailPage() {
               Complexity Vectors
             </h3>
             <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <RiskThermometer label="Clinical" value={vectors.clinical} subscript="V_c" />
-                </div>
-                {vectorLabels?.clinical && (
-                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6",
-                    vectorLabels.clinical === "STABLE" ? "bg-green-50 text-green-600" :
-                    vectorLabels.clinical === "IMPROVING" ? "bg-blue-50 text-blue-600" :
-                    "bg-red-50 text-red-600"
-                  )}>{vectorLabels.clinical}</span>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <RiskThermometer label="Documentation" value={vectors.documentation} subscript="V_d" />
-                </div>
-                {vectorLabels?.documentation && (
-                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6",
-                    vectorLabels.documentation === "COMPLETE" ? "bg-green-50 text-green-600" :
-                    "bg-red-50 text-red-600"
-                  )}>{vectorLabels.documentation}</span>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <RiskThermometer label="Discrepancy" value={vectors.discrepancy} subscript="V_i" />
-                </div>
-                {vectorLabels?.discrepancy && (
-                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6",
-                    vectorLabels.discrepancy === "NO CONTRADICTION" ? "bg-green-50 text-green-600" :
-                    "bg-red-50 text-red-600"
-                  )}>{vectorLabels.discrepancy}</span>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <RiskThermometer label="Behavioral" value={vectors.behavioral} subscript="V_b" />
-                </div>
-                {vectorLabels?.behavioral && (
-                  <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6",
-                    vectorLabels.behavioral === "CALM" ? "bg-green-50 text-green-600" :
-                    "bg-red-50 text-red-600"
-                  )}>{vectorLabels.behavioral}</span>
-                )}
-              </div>
+              <RiskThermometer label="Clinical" value={vectors.clinical} subscript="V_c" />
+              {vectorLabels?.clinical && (
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
+                  vectorLabels.clinical === "STABLE" ? "bg-green-50 text-green-600" :
+                  vectorLabels.clinical === "IMPROVING" ? "bg-blue-50 text-blue-600" :
+                  "bg-red-50 text-red-600"
+                )}>{vectorLabels.clinical}</span>
+              )}
+              <RiskThermometer label="Documentation" value={vectors.documentation} subscript="V_d" />
+              {vectorLabels?.documentation && (
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
+                  vectorLabels.documentation === "COMPLETE" ? "bg-green-50 text-green-600" :
+                  "bg-red-50 text-red-600"
+                )}>{vectorLabels.documentation}</span>
+              )}
+              <RiskThermometer label="Discrepancy" value={vectors.discrepancy} subscript="V_i" />
+              {vectorLabels?.discrepancy && (
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
+                  vectorLabels.discrepancy === "NO CONTRADICTION" ? "bg-green-50 text-green-600" :
+                  "bg-red-50 text-red-600"
+                )}>{vectorLabels.discrepancy}</span>
+              )}
+              <RiskThermometer label="Behavioral" value={vectors.behavioral} subscript="V_b" />
+              {vectorLabels?.behavioral && (
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
+                  vectorLabels.behavioral === "CALM" ? "bg-green-50 text-green-600" :
+                  "bg-red-50 text-red-600"
+                )}>{vectorLabels.behavioral}</span>
+              )}
             </div>
           </div>
 
