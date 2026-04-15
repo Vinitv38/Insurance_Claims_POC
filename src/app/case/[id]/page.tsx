@@ -61,6 +61,7 @@ export default function CaseDetailPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [docModalTab, setDocModalTab] = useState<DocViewTab>("original");
+  const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
 
@@ -439,8 +440,24 @@ export default function CaseDetailPage() {
     );
   }
 
-  /* Decision Tab - AI Summary + Complexity Vectors (no document viewer - moved to overview tab) */
+  /* Decision Tab - AI Summary with Assessment Tabs + Complexity Vectors */
   function renderDecisionTab() {
+    const assessments = caseData.assessments;
+    const hasAssessments = assessments.length > 0;
+    // Default to the latest assessment (last in the list)
+    const activeAssessment = hasAssessments
+      ? assessments.find((a) => a.id === activeAssessmentId) || assessments[assessments.length - 1]
+      : null;
+
+    // Use assessment data if available, otherwise fall back to claim-level data
+    const summaryText = activeAssessment?.summary || caseData.summary;
+    const riskIndicators = activeAssessment?.riskIndicators || caseData.riskIndicators;
+    const recommendedAction = activeAssessment?.recommendedAction || caseData.recommendedAction;
+    const confidencePct = activeAssessment ? activeAssessment.confidencePct : (caseData.complexityScore <= 30 ? 96.2 : caseData.complexityScore <= 60 ? 89.4 : caseData.complexityScore <= 80 ? 82.1 : 94.8);
+    const docsAnalyzed = activeAssessment?.documentsAnalyzed || caseData.documents.length;
+    const vectors = activeAssessment?.vectors || caseData.vectors;
+    const assessmentScore = activeAssessment?.complexityScore ?? caseData.complexityScore;
+
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Left Pane: AI Decision Summary */}
@@ -451,7 +468,67 @@ export default function CaseDetailPage() {
               <h2 className="text-sm font-semibold text-acme-teal">AI Decision Summary</h2>
               <span className="ml-auto text-[10px] px-2 py-0.5 rounded bg-green-50 text-green-700 border border-green-200">AUTO-GENERATED</span>
             </div>
+
+            {/* Assessment Tab Bar */}
+            {hasAssessments && (
+              <div className="px-5 pt-3 pb-0 border-b border-acme-border/50">
+                <div className="flex items-center gap-1 overflow-x-auto pb-0 -mb-px scrollbar-thin">
+                  {assessments.map((assessment, idx) => {
+                    const isActive = activeAssessment?.id === assessment.id;
+                    const dateStr = new Date(assessment.assessmentDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                    return (
+                      <button
+                        key={assessment.id}
+                        onClick={() => setActiveAssessmentId(assessment.id)}
+                        className={cn(
+                          "flex-shrink-0 flex flex-col items-start px-4 py-2.5 rounded-t-lg border border-b-0 transition-all text-left min-w-[180px]",
+                          isActive
+                            ? "bg-white border-acme-border text-acme-teal relative z-10"
+                            : "bg-gray-50 border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={cn("text-xs font-semibold", isActive ? "text-acme-teal" : "text-gray-600")}>
+                            {assessment.label}
+                          </span>
+                          {idx === assessments.length - 1 && (
+                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-acme-orange/10 text-acme-orange font-bold uppercase">Latest</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 mt-0.5">{dateStr}</span>
+                        <span className="text-[9px] text-gray-400 mt-0.5 truncate max-w-[200px]">
+                          Triggered by: {assessment.trigger}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="p-5 space-y-6">
+              {/* Assessment Score Badge (when viewing specific assessment) */}
+              {activeAssessment && (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className={cn("text-xs font-bold px-2.5 py-1 rounded",
+                    assessmentScore <= 30 ? "bg-green-50 text-green-700 border border-green-200" :
+                    assessmentScore <= 60 ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                    assessmentScore <= 80 ? "bg-acme-orange/10 text-acme-orange border border-acme-orange/20" :
+                    "bg-red-50 text-red-700 border border-red-200"
+                  )}>
+                    Score: {assessmentScore}/100
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    {activeAssessment.documentsAnalyzed} documents analyzed
+                  </span>
+                  {assessments.length > 1 && assessments.indexOf(activeAssessment) > 0 && (
+                    <span className="text-[10px] font-mono text-acme-orange">
+                      {assessments[assessments.indexOf(activeAssessment) - 1].complexityScore} {"\u2192"} {assessmentScore}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* Clinical Synopsis */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -460,7 +537,7 @@ export default function CaseDetailPage() {
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    {caseData.summary}
+                    {summaryText}
                   </p>
                 </div>
               </div>
@@ -472,12 +549,18 @@ export default function CaseDetailPage() {
                   <h3 className="text-xs font-bold text-green-600 uppercase tracking-wider">Risk Indicators / Red Flags</h3>
                 </div>
                 <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  {caseData.riskIndicators?.map((indicator, i) => (
+                  {riskIndicators?.map((indicator, i) => (
                     <div key={i} className="flex items-start gap-2 py-1.5">
                       {indicator.includes("CRITICAL") ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" /> :
                        indicator.includes("WARNING") ? <Clock className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" /> :
+                       indicator.includes("RESOLVED") ? <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" /> :
+                       indicator.includes("REDUCED") ? <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 mt-0.5 flex-shrink-0" /> :
                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />}
-                      <p className="text-sm text-gray-600">{indicator}</p>
+                      <p className={cn("text-sm",
+                        indicator.includes("RESOLVED") ? "text-blue-600" :
+                        indicator.includes("REDUCED") ? "text-teal-600" :
+                        "text-gray-600"
+                      )}>{indicator}</p>
                     </div>
                   ))}
                 </div>
@@ -490,7 +573,7 @@ export default function CaseDetailPage() {
                   <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider">Recommended Next Steps</h3>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-gray-700 leading-relaxed font-medium">{caseData.recommendedAction}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed font-medium">{recommendedAction}</p>
                 </div>
               </div>
 
@@ -499,18 +582,18 @@ export default function CaseDetailPage() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">AI Confidence Level</span>
                   <span className="text-sm font-bold text-green-600">
-                    {caseData.complexityScore <= 30 ? "96.2%" : caseData.complexityScore <= 60 ? "89.4%" : caseData.complexityScore <= 80 ? "82.1%" : "94.8%"}
+                    {confidencePct.toFixed(1)}%
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
                   <motion.div
                     className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full"
                     initial={{ width: "0%" }}
-                    animate={{ width: caseData.complexityScore <= 30 ? "96.2%" : caseData.complexityScore <= 60 ? "89.4%" : caseData.complexityScore <= 80 ? "82.1%" : "94.8%" }}
+                    animate={{ width: `${confidencePct}%` }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
                   />
                 </div>
-                <p className="text-[10px] text-gray-500 mt-2">Based on {caseData.documents.length} source documents analyzed.</p>
+                <p className="text-[10px] text-gray-500 mt-2">Based on {docsAnalyzed} source documents analyzed.</p>
               </div>
 
             </div>
@@ -520,12 +603,15 @@ export default function CaseDetailPage() {
         {/* Right Pane: Complexity Vectors */}
         <div className="lg:col-span-1 space-y-4">
           <div className="rounded-xl border border-acme-border bg-white p-4">
-            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">Complexity Vectors</h3>
+            <h3 className="text-xs font-semibold text-acme-teal mb-3 uppercase tracking-wider">
+              Complexity Vectors
+              {activeAssessment && <span className="text-[9px] text-gray-400 font-normal ml-1">({activeAssessment.label})</span>}
+            </h3>
             <div className="space-y-3">
-              <RiskThermometer label="Clinical" value={caseData.vectors.clinical} subscript="V_c" />
-              <RiskThermometer label="Documentation" value={caseData.vectors.documentation} subscript="V_d" />
-              <RiskThermometer label="Discrepancy" value={caseData.vectors.discrepancy} subscript="V_i" />
-              <RiskThermometer label="Behavioral" value={caseData.vectors.behavioral} subscript="V_b" />
+              <RiskThermometer label="Clinical" value={vectors.clinical} subscript="V_c" />
+              <RiskThermometer label="Documentation" value={vectors.documentation} subscript="V_d" />
+              <RiskThermometer label="Discrepancy" value={vectors.discrepancy} subscript="V_i" />
+              <RiskThermometer label="Behavioral" value={vectors.behavioral} subscript="V_b" />
             </div>
           </div>
 

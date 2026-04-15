@@ -590,6 +590,90 @@ const skillSets = [
   { id: "skill-4", name: "SIU Fraud Unit", description: "Handles critical-complexity claims with potential fraud indicators", min_score: 91, max_score: 100, user_count: 3, capacity_free: 33, color: "#EF4444" },
 ];
 
+const assessments = [
+  // Claim-001 (Pendelton) — clean case, single assessment
+  {
+    id: "assess-p1",
+    claim_id: "claim-001",
+    label: "Initial Assessment",
+    assessment_date: "2026-04-08",
+    trigger: "Initial Intake",
+    complexity_score: 24,
+    vector_clinical: 30,
+    vector_documentation: 10,
+    vector_discrepancy: 0,
+    vector_behavioral: 0,
+    summary: "Arthur Pendelton, 72M with Parkinson's Disease (G20). ADL deficits in Bathing, Dressing, and Transferring meet the minimum 2-of-6 threshold. 90-day elimination period satisfied. Policy active since 2009 with no lapses. Medication history consistent with diagnosis. VNA field assessment corroborates physician and claimant self-reports. No discrepancies or behavioral red flags detected.",
+    risk_indicators: [
+      "ADL trigger met: 3 of 6 ADLs require assistance (Bathing, Dressing, Transferring)",
+      "90-day elimination period: SATISFIED",
+      "Policy active 17 years — no lapses in 24 consecutive payments",
+      "Medication regimen consistent with Parkinson's diagnosis",
+      "VNA assessment corroborates clinical documentation",
+      "No controlled substances or opioids detected",
+      "Cognitive status intact — MMSE 29/30",
+      "No behavioral red flags in call transcript analysis"
+    ],
+    recommended_action: "Approve claim for benefit initiation. All documentation consistent. Route to Junior Adjuster for administrative sign-off.",
+    confidence_pct: 96.2,
+    documents_analyzed: 10,
+    ai_output_md: null,
+  },
+  // Claim-002 (Hargrove) — complex case, TWO assessments
+  {
+    id: "assess-h1",
+    claim_id: "claim-002",
+    label: "Initial Assessment",
+    assessment_date: "2026-04-10",
+    trigger: "Initial Intake",
+    complexity_score: 88,
+    vector_clinical: 55,
+    vector_documentation: 90,
+    vector_discrepancy: 90,
+    vector_behavioral: 78,
+    summary: "Robert Hargrove, 81M with left hip fracture (S72.001A) and mild cognitive impairment. ADL deficits in 4 of 6 categories. Multiple critical issues detected: discharge summary missing pages 2-4, low-quality fax (OCR 62%), direct contradiction between archived care plan (ambulatory with cane) and current wheelchair claim. Behavioral inconsistencies in call transcript with sentiment shift at 08:44. Opioid prescriptions from two different prescribers within 14 days.",
+    risk_indicators: [
+      "CRITICAL: Discharge summary incomplete — pages 2-4 missing",
+      "CRITICAL: OCR confidence 62% — below 85% threshold on care plan fax",
+      "CRITICAL: Direct contradiction — archived plan shows ambulatory, current claim wheelchair-dependent",
+      "WARNING: Behavioral inconsistency — claimant hesitation/evasion detected at 08:44",
+      "WARNING: Two opioid prescriptions from different prescribers within 14 days",
+      "ADL deficit count: 4 of 6 — meets threshold",
+      "Prior assessment history shows rapid ADL decline from 6/6 to wheelchair in 5 months"
+    ],
+    recommended_action: "Escalate to Tier 2 Clinical Investigator. Request complete discharge summary (pages 2-4). Obtain high-resolution care plan. Investigate mobility status discrepancy before benefit authorization.",
+    confidence_pct: 82.1,
+    documents_analyzed: 9,
+    ai_output_md: null,
+  },
+  {
+    id: "assess-h2",
+    claim_id: "claim-002",
+    label: "Reassessment",
+    assessment_date: "2026-04-15",
+    trigger: "Document re-upload (Complete Discharge Summary)",
+    complexity_score: 72,
+    vector_clinical: 50,
+    vector_documentation: 45,
+    vector_discrepancy: 85,
+    vector_behavioral: 78,
+    summary: "Reassessment after receiving complete discharge summary (4/4 pages). Surgical notes confirm ORIF procedure and post-op delirium. Discharge medication list now available — Hydrocodone prescribed by ER physician aligns with surgical recovery. Documentation vector significantly reduced. However, mobility discrepancy between archived care plan and current claim remains unresolved. Behavioral flags from call transcript persist.",
+    risk_indicators: [
+      "RESOLVED: Discharge summary now complete — 4/4 pages received",
+      "RESOLVED: Surgical notes confirm ORIF and post-op complications",
+      "REDUCED: Documentation vector improved after re-upload",
+      "CRITICAL: Mobility discrepancy still unresolved — archived plan vs. current wheelchair claim",
+      "WARNING: Behavioral inconsistency persists — no new evidence to resolve",
+      "Opioid prescription context clarified — post-surgical pain management",
+      "Score reduced from 88 to 72 after documentation gap resolved"
+    ],
+    recommended_action: "Continue investigation. Documentation gaps resolved but mobility discrepancy remains. Request in-person functional assessment to validate current ADL status. Await Tier 2 Clinical Investigator review.",
+    confidence_pct: 87.3,
+    documents_analyzed: 10,
+    ai_output_md: null,
+  },
+];
+
 const fatalOverrides = [
   { id: "override-1", condition: "Evidence Discrepancy", operator: "==", value: "DIRECT_CONTRADICTION", and_condition: "Total Score", and_operator: ">", and_value: "90", then_action: "Route to Tier 2 Clinical", is_active: true },
   { id: "override-2", condition: "Documentation Completeness", operator: "==", value: "CRITICAL_MISSING_PAGES", and_condition: "Clinical Vector", and_operator: ">", and_value: "60", then_action: "Hold for Manual Review", is_active: true },
@@ -603,6 +687,7 @@ async function seed() {
 
   // Clear existing data (in reverse dependency order)
   console.log("Clearing existing data...");
+  await supabase.from("assessments").delete().neq("id", "");
   await supabase.from("audit_history").delete().neq("id", "");
   await supabase.from("documents").delete().neq("id", "");
   await supabase.from("claims").delete().neq("id", "");
@@ -654,6 +739,15 @@ async function seed() {
     return;
   }
   console.log(`  Inserted ${fatalOverrides.length} fatal overrides.\n`);
+
+  // Insert assessments
+  console.log("Inserting assessments...");
+  const { error: assessError } = await supabase.from("assessments").insert(assessments);
+  if (assessError) {
+    console.error("  Error inserting assessments:", assessError.message);
+    return;
+  }
+  console.log(`  Inserted ${assessments.length} assessments.\n`);
 
   console.log("Seed complete! All data inserted successfully.");
 }

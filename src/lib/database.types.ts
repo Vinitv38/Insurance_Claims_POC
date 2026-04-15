@@ -133,6 +133,46 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["skill_sets"]["Insert"]>;
       };
+      assessments: {
+        Row: {
+          id: string;
+          claim_id: string;
+          label: string;
+          assessment_date: string;
+          trigger: string;
+          complexity_score: number;
+          vector_clinical: number;
+          vector_documentation: number;
+          vector_discrepancy: number;
+          vector_behavioral: number;
+          summary: string | null;
+          risk_indicators: string[] | null;
+          recommended_action: string | null;
+          confidence_pct: number;
+          documents_analyzed: number;
+          ai_output_md: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          claim_id: string;
+          label: string;
+          assessment_date: string;
+          trigger?: string;
+          complexity_score?: number;
+          vector_clinical?: number;
+          vector_documentation?: number;
+          vector_discrepancy?: number;
+          vector_behavioral?: number;
+          summary?: string | null;
+          risk_indicators?: string[] | null;
+          recommended_action?: string | null;
+          confidence_pct?: number;
+          documents_analyzed?: number;
+          ai_output_md?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["assessments"]["Insert"]>;
+      };
       fatal_overrides: {
         Row: {
           id: string;
