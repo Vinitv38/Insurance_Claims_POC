@@ -94,7 +94,7 @@ const claims = [
     date_of_birth: "1947-03-15",
     age: 79,
     diagnosis: "Fibromyalgia, Arthritis, Prostate Cancer",
-    status: "approved",
+    status: "auto_approved",
     assigned_to: "Sarah Chen",
     assigned_group: "Junior Adjuster",
     complexity_score: 13,
