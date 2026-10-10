@@ -54,8 +54,9 @@ export const useAssessmentRuns = create<AssessmentRunsState>((set, get) => {
     activeLoops.add(claimId);
     setRun(claimId, { phase: "running", executionId: pending.executionId, startedAt: pending.startedAt });
     try {
-      while (Date.now() - pending.startedAt < pending.maxWaitMs) {
-        await sleep(pending.pollIntervalMs);
+      // Check at least once, so a run resumed after the time limit still saves its result.
+      for (let first = true; first || Date.now() - pending.startedAt < pending.maxWaitMs; first = false) {
+        if (!first || Date.now() - pending.startedAt < pending.maxWaitMs) await sleep(pending.pollIntervalMs);
         const res = await fetch(
           `/api/assessments/status/${encodeURIComponent(pending.executionId)}?claimId=${encodeURIComponent(claimId)}`
         );
