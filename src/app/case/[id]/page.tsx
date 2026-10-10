@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useClaimsStore } from "@/store/claims-store";
 import { useAssessmentRuns } from "@/store/assessment-runs";
-import RiskThermometer, { tagBadgeClass } from "@/components/ui/RiskThermometer";
+import RiskThermometer, { tagBadgeClass, tagWeight } from "@/components/ui/RiskThermometer";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -588,6 +588,19 @@ export default function CaseDetailPage() {
     const recommendedAction = activeAssessment?.recommendedAction || caseData.recommendedAction;
     const vectors = activeAssessment?.vectors || caseData.vectors;
     const vectorLabels = activeAssessment?.vectorLabels;
+    // Seeded alerts carry a CRITICAL/WARNING keyword; live workflow alerts are coloured by the tag they relate to.
+    const alertLevel = (indicator: string): "critical" | "warning" | "resolved" | "reduced" | "ok" => {
+      if (indicator.includes("CRITICAL")) return "critical";
+      if (indicator.includes("WARNING")) return "warning";
+      if (indicator.includes("RESOLVED")) return "resolved";
+      if (indicator.includes("REDUCED")) return "reduced";
+      const weight = /^\s*narrative conflict/i.test(indicator) ? tagWeight("discrepancy", vectorLabels?.discrepancy)
+        : /^\s*documentation gap/i.test(indicator) ? tagWeight("documentation", vectorLabels?.documentation)
+        : null;
+      if (weight !== null && weight >= 0.7) return "critical";
+      if (weight !== null && weight >= 0.3) return "warning";
+      return "ok";
+    };
     const assessmentScore = activeAssessment?.complexityScore ?? caseData.complexityScore;
 
     return (
@@ -700,24 +713,28 @@ export default function CaseDetailPage() {
                   <h3 className="text-xs font-bold text-red-600 uppercase tracking-wider">Critical Alerts & Discrepancies</h3>
                 </div>
                 <div className={cn("rounded-lg p-4 border",
-                  riskIndicators?.some(r => r.includes("CRITICAL")) ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
+                  riskIndicators?.some(r => alertLevel(r) === "critical") ? "bg-red-50 border-red-200" :
+                  riskIndicators?.some(r => alertLevel(r) === "warning") ? "bg-amber-50 border-amber-200" : "bg-green-50 border-green-200"
                 )}>
-                  {riskIndicators?.map((indicator, i) => (
+                  {riskIndicators?.map((indicator, i) => {
+                    const level = alertLevel(indicator);
+                    return (
                     <div key={i} className="flex items-start gap-2 py-1.5">
-                      {indicator.includes("CRITICAL") ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" /> :
-                       indicator.includes("WARNING") ? <Clock className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" /> :
-                       indicator.includes("RESOLVED") ? <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" /> :
-                       indicator.includes("REDUCED") ? <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 mt-0.5 flex-shrink-0" /> :
+                      {level === "critical" ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" /> :
+                       level === "warning" ? <Clock className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" /> :
+                       level === "resolved" ? <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" /> :
+                       level === "reduced" ? <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 mt-0.5 flex-shrink-0" /> :
                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />}
                       <p className={cn("text-sm",
-                        indicator.includes("CRITICAL") ? "text-red-700 font-medium" :
-                        indicator.includes("WARNING") ? "text-amber-700" :
-                        indicator.includes("RESOLVED") ? "text-blue-600" :
-                        indicator.includes("REDUCED") ? "text-teal-600" :
+                        level === "critical" ? "text-red-700 font-medium" :
+                        level === "warning" ? "text-amber-700" :
+                        level === "resolved" ? "text-blue-600" :
+                        level === "reduced" ? "text-teal-600" :
                         "text-gray-600"
                       )}>{indicator}</p>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

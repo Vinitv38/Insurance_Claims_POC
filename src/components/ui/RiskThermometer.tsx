@@ -44,13 +44,18 @@ const VECTOR_TAXONOMY: Record<string, TaxonomyEntry[]> = {
   ],
 };
 
-// Badge colour follows the tag's taxonomy weight; labels may use spaces or underscores.
-export function tagBadgeClass(vector: keyof typeof VECTOR_TAXONOMY, label: string): string {
+// Taxonomy weight of a tag; labels may use spaces or underscores. Null when the label is unknown.
+export function tagWeight(vector: keyof typeof VECTOR_TAXONOMY, label: string | undefined): number | null {
+  if (!label) return null;
   const key = label.trim().toUpperCase().replace(/\s+/g, "_");
-  const entry = VECTOR_TAXONOMY[vector]?.find((t) => t.label === key);
-  if (!entry) return "bg-gray-100 text-gray-600";
-  if (entry.score <= 0.2) return "bg-green-50 text-green-600";
-  if (entry.score <= 0.6) return "bg-amber-50 text-amber-600";
+  return VECTOR_TAXONOMY[vector]?.find((t) => t.label === key)?.score ?? null;
+}
+
+export function tagBadgeClass(vector: keyof typeof VECTOR_TAXONOMY, label: string): string {
+  const weight = tagWeight(vector, label);
+  if (weight === null) return "bg-gray-100 text-gray-600";
+  if (weight <= 0.2) return "bg-green-50 text-green-600";
+  if (weight <= 0.6) return "bg-amber-50 text-amber-600";
   return "bg-red-50 text-red-600";
 }
 
