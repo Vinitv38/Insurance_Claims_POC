@@ -1,5 +1,7 @@
 "use client";
 
+import { scoreBand, SCORE_BAND_HEX } from "@/lib/score-bands";
+
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -10,17 +12,11 @@ interface ComplexityGaugeProps {
 }
 
 function getScoreColor(score: number): string {
-  if (score <= 30) return "#22C55E";
-  if (score <= 60) return "#F59E0B";
-  if (score <= 80) return "#DF643D";
-  return "#EF4444";
+  return SCORE_BAND_HEX[scoreBand(score)];
 }
 
 function getScoreLabel(score: number): string {
-  if (score <= 30) return "LOW";
-  if (score <= 60) return "MODERATE";
-  if (score <= 80) return "HIGH";
-  return "CRITICAL";
+  return { low: "LOW", moderate: "MODERATE", high: "HIGH", critical: "CRITICAL" }[scoreBand(score)];
 }
 
 export default function ComplexityGauge({ score, size = 220, label }: ComplexityGaugeProps) {

@@ -2,7 +2,8 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useClaimsStore } from "@/store/claims-store";
-import RiskThermometer from "@/components/ui/RiskThermometer";
+import { useAssessmentRuns } from "@/store/assessment-runs";
+import RiskThermometer, { tagBadgeClass, tagWeight } from "@/components/ui/RiskThermometer";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -19,8 +20,19 @@ import { uploadDocumentFile, insertDocument, updateDocumentMarkdown } from "@/li
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+import { CitedText, LabeledLines, NumberedSteps, splitLabel, stripCitations } from "@/components/ui/BriefingText";
+import { scoreBand, SCORE_BAND_TEXT, SCORE_BAND_BAR, SCORE_BAND_SOFT } from "@/lib/score-bands";
 
 type MainTab = "overview" | "decision" | "audit";
+
+const ALERT_STYLES = {
+  critical: { card: "bg-red-50 border-red-200 border-l-red-500", icon: "text-red-500", title: "text-red-700", badge: "bg-red-100 text-red-700", badgeText: "Critical", fallbackTitle: "Alert" },
+  warning: { card: "bg-amber-50 border-amber-200 border-l-amber-500", icon: "text-amber-500", title: "text-amber-700", badge: "bg-amber-100 text-amber-700", badgeText: "Warning", fallbackTitle: "Alert" },
+  resolved: { card: "bg-blue-50 border-blue-200 border-l-blue-500", icon: "text-blue-500", title: "text-blue-700", badge: "bg-blue-100 text-blue-700", badgeText: "Resolved", fallbackTitle: "Resolved" },
+  reduced: { card: "bg-teal-50 border-teal-200 border-l-teal-500", icon: "text-teal-500", title: "text-teal-700", badge: "bg-teal-100 text-teal-700", badgeText: "Reduced", fallbackTitle: "Reduced" },
+  ok: { card: "bg-green-50 border-green-200 border-l-green-500", icon: "text-green-500", title: "text-green-700", badge: "bg-green-100 text-green-700", badgeText: "Clear", fallbackTitle: "No Alerts" },
+} as const;
+
 type DocViewTab = "original" | "schema" | "interpreted";
 
 const LIFECYCLE_STAGES = [
@@ -64,8 +76,31 @@ export default function CaseDetailPage() {
   const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(null);
   const [fetchedFileContent, setFetchedFileContent] = useState<Record<string, string>>({});
   const [fetchingFile, setFetchingFile] = useState(false);
+  const assessmentRun = useAssessmentRuns((s) => s.runs[caseId]);
+  const startRun = useAssessmentRuns((s) => s.startRun);
+  const resumeRuns = useAssessmentRuns((s) => s.resumeRuns);
+  const dismissRun = useAssessmentRuns((s) => s.dismiss);
+  const [, setClockTick] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
+  const isAssessing = assessmentRun?.phase === "starting" || assessmentRun?.phase === "running";
+  const completedAssessmentId = assessmentRun?.phase === "done" ? assessmentRun.assessmentId : null;
+
+  useEffect(() => {
+    resumeRuns();
+  }, [resumeRuns]);
+
+  useEffect(() => {
+    if (!isAssessing) return;
+    const timer = setInterval(() => setClockTick((t) => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isAssessing]);
+
+  useEffect(() => {
+    if (!completedAssessmentId) return;
+    setActiveAssessmentId(completedAssessmentId);
+    setMainTab("decision");
+  }, [completedAssessmentId]);
 
   // Pre-fill all document checkboxes on load
   useEffect(() => {
@@ -125,7 +160,26 @@ export default function CaseDetailPage() {
   // TypeScript now knows caseData is non-null after the guard above
   const caseData = currentCase;
   const activeDoc = caseData.documents.find((d) => d.id === activeDocumentId);
+
+  const openCitedDocument = (docId: string) => {
+    setActiveDocument(docId);
+    setDocModalTab("original");
+    setDocModalOpen(true);
+  };
+  const citeProps = { docs: caseData.documents, onOpenDocument: openCitedDocument };
+
+  // Overview fields follow the latest live LTC New assessment once one exists.
+  const latestAssessment = caseData.assessments[caseData.assessments.length - 1];
+  const liveAssessment = latestAssessment?.id.startsWith("live-") ? latestAssessment : undefined;
+  const liveDiagnosisLine = liveAssessment?.clinicalProfileMd?.match(/Verified Primary Diagnoses\s*:\s*(.+)/i)?.[1];
+  const diagnosis = liveDiagnosisLine ? stripCitations(liveDiagnosisLine).split(/(?<=\.)\s/)[0].replace(/\.$/, "") : caseData.diagnosis;
+  const eliminationPeriod = liveAssessment?.eliminationPeriod
+    ? stripCitations(liveAssessment.eliminationPeriod).split(/;|\.\s/)[0].replace(/\.$/, "")
+    : caseData.eliminationPeriod;
+  const caseSummary = liveAssessment?.summary || caseData.summary;
+  const nextSteps = liveAssessment?.recommendedAction || caseData.recommendedAction;
   const currentStage = getLifecycleStage(caseData.status);
+
 
   /* Helper: determine file extension from name or URL */
   function getFileExtension(doc: Document): string {
@@ -146,6 +200,14 @@ export default function CaseDetailPage() {
     if (ext === "csv") return <FileSpreadsheet className="w-4 h-4 text-green-500" />;
     if (ext === "txt") return <FileType className="w-4 h-4 text-blue-500" />;
     return <FileText className="w-4 h-4 text-gray-400" />;
+  }
+
+  // Seeded findings mark severity with a leading marker; negated lines ("No red flags…") stay neutral.
+  function findingLevel(finding: string): "critical" | "warning" | "info" {
+    if (/^\s*(CRITICAL|DIRECT CONTRADICTION|FAILED)\b/.test(finding)) return "critical";
+    if (/^\s*no\b/i.test(finding)) return "info";
+    if (/^\s*(DISCREPANCY|WARNING)\b|\bflag:|\binconsisten|\bconflicts?\b/i.test(finding)) return "warning";
+    return "info";
   }
 
   function getActivityColor(action: string) {
@@ -344,7 +406,7 @@ export default function CaseDetailPage() {
       <div>
         <div className="bg-gray-50 rounded-lg p-4 border border-acme-border font-mono text-[11px] text-gray-600 leading-relaxed relative">
           {doc.extractedText?.split("\n").map((line, i) => {
-            const isHighlighted = line.includes("MISSING") || line.includes("FAILED") || line.includes("CRITICAL") || line.includes("CONTRADICTION") || line.includes("wheelchair") || line.includes("Page 1 of 4") || line.includes("Left hip") || line.includes("HANDWRITTEN") || line.includes("OCR");
+            const isHighlighted = /\b(MISSING|FAILED|CRITICAL|CONTRADICTION)\b/.test(line);
             return (
               <div key={i} className={cn("py-0.5", isHighlighted && "bbox-highlight px-1 my-1")}>
                 {line}
@@ -499,9 +561,9 @@ export default function CaseDetailPage() {
                     {doc.aiFindings.map((finding, i) => (
                       <div key={i} className={cn(
                         "flex items-start gap-2 text-xs py-1.5 px-2 rounded",
-                        finding.includes("CRITICAL") || finding.includes("CONTRADICTION") || finding.includes("FAILED") || finding.includes("WARNING")
+                        findingLevel(finding) === "critical"
                           ? "bg-red-50 text-red-600 border border-red-200"
-                          : finding.includes("flag") || finding.includes("Inconsisten")
+                          : findingLevel(finding) === "warning"
                             ? "bg-amber-50 text-amber-600 border border-amber-200"
                             : "bg-gray-50 text-gray-600 border border-gray-200"
                       )}>
@@ -542,7 +604,7 @@ export default function CaseDetailPage() {
           {statusConfig.icon}
           <h3 className={cn("text-xs font-semibold uppercase tracking-wider", statusConfig.text)}>Next Steps</h3>
         </div>
-        <p className="text-sm text-gray-600 leading-relaxed">{caseData.recommendedAction}</p>
+        {nextSteps && <NumberedSteps text={nextSteps} {...citeProps} />}
       </div>
     );
   }
@@ -562,6 +624,19 @@ export default function CaseDetailPage() {
     const recommendedAction = activeAssessment?.recommendedAction || caseData.recommendedAction;
     const vectors = activeAssessment?.vectors || caseData.vectors;
     const vectorLabels = activeAssessment?.vectorLabels;
+    // Seeded alerts carry a CRITICAL/WARNING keyword; live workflow alerts are coloured by the tag they relate to.
+    const alertLevel = (indicator: string): "critical" | "warning" | "resolved" | "reduced" | "ok" => {
+      if (indicator.includes("CRITICAL")) return "critical";
+      if (indicator.includes("WARNING")) return "warning";
+      if (indicator.includes("RESOLVED")) return "resolved";
+      if (indicator.includes("REDUCED")) return "reduced";
+      const weight = /^\s*narrative conflict/i.test(indicator) ? tagWeight("discrepancy", vectorLabels?.discrepancy)
+        : /^\s*documentation gap/i.test(indicator) ? tagWeight("documentation", vectorLabels?.documentation)
+        : null;
+      if (weight !== null && weight >= 0.7) return "critical";
+      if (weight !== null && weight >= 0.3) return "warning";
+      return "ok";
+    };
     const assessmentScore = activeAssessment?.complexityScore ?? caseData.complexityScore;
 
     return (
@@ -575,7 +650,7 @@ export default function CaseDetailPage() {
               {activeAssessment?.systemRecommendation && (
                 <span className={cn("text-[10px] px-2 py-0.5 rounded font-bold uppercase",
                   activeAssessment.systemRecommendation.includes("APPROVE") ? "bg-green-50 text-green-700 border border-green-200" :
-                  activeAssessment.systemRecommendation.includes("ESCALATE") ? "bg-red-50 text-red-700 border border-red-200" :
+                  activeAssessment.systemRecommendation.includes("ESCALATE") || activeAssessment.systemRecommendation.includes("REJECT") ? "bg-red-50 text-red-700 border border-red-200" :
                   "bg-amber-50 text-amber-700 border border-amber-200"
                 )}>
                   {activeAssessment.systemRecommendation}
@@ -622,6 +697,15 @@ export default function CaseDetailPage() {
             )}
 
             <div className="p-5 space-y-6">
+              {activeAssessment?.scoreDriver && (
+                <div className={cn("rounded-lg border-l-4 p-3 bg-white border border-acme-border/60",
+                  { low: "border-l-green-500", moderate: "border-l-amber-500", high: "border-l-acme-orange", critical: "border-l-red-500" }[scoreBand(assessmentScore)]
+                )}>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">Primary Score Driver</span>
+                  <CitedText text={activeAssessment.scoreDriver} {...citeProps} className="font-medium text-gray-800" />
+                </div>
+              )}
+
               {/* 1. Clinical Synopsis (Executive Summary) */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -629,9 +713,7 @@ export default function CaseDetailPage() {
                   <h3 className="text-xs font-bold text-acme-orange uppercase tracking-wider">Clinical Synopsis</h3>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {summaryText}
-                  </p>
+                  {summaryText && <CitedText text={summaryText} {...citeProps} />}
                 </div>
               </div>
 
@@ -646,21 +728,24 @@ export default function CaseDetailPage() {
                     {activeAssessment.contractStatus && (
                       <div className="flex items-start gap-3">
                         <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Contract Status</span>
-                        <span className={cn("text-sm font-medium",
-                          activeAssessment.contractStatus.startsWith("ACTIVE") ? "text-green-700" : "text-red-700"
-                        )}>{activeAssessment.contractStatus}</span>
+                        <div className="flex-1 flex items-start gap-2">
+                          <span className={cn("text-[10px] font-bold uppercase px-2 py-0.5 rounded border flex-shrink-0",
+                            /^\W*active\b/i.test(activeAssessment.contractStatus) ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
+                          )}>{/^\W*active\b/i.test(activeAssessment.contractStatus) ? "Active" : "Inactive"}</span>
+                          <CitedText text={activeAssessment.contractStatus.replace(/^\W*(?:in)?active\b[\s;,:+-]*/i, "")} {...citeProps} className="flex-1" />
+                        </div>
                       </div>
                     )}
                     {activeAssessment.eliminationPeriod && (
                       <div className="flex items-start gap-3">
                         <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Elimination Period</span>
-                        <span className="text-sm text-gray-700">{activeAssessment.eliminationPeriod}</span>
+                        <CitedText text={activeAssessment.eliminationPeriod} {...citeProps} className="flex-1" />
                       </div>
                     )}
                     {activeAssessment.exclusions && (
                       <div className="flex items-start gap-3">
                         <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold w-32 flex-shrink-0 pt-0.5">Exclusions</span>
-                        <span className="text-sm text-gray-700">{activeAssessment.exclusions}</span>
+                        <CitedText text={activeAssessment.exclusions} {...citeProps} className="flex-1" />
                       </div>
                     )}
                   </div>
@@ -673,25 +758,22 @@ export default function CaseDetailPage() {
                   <AlertTriangle className="w-4 h-4 text-red-500" />
                   <h3 className="text-xs font-bold text-red-600 uppercase tracking-wider">Critical Alerts & Discrepancies</h3>
                 </div>
-                <div className={cn("rounded-lg p-4 border",
-                  riskIndicators?.some(r => r.includes("CRITICAL")) ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
-                )}>
-                  {riskIndicators?.map((indicator, i) => (
-                    <div key={i} className="flex items-start gap-2 py-1.5">
-                      {indicator.includes("CRITICAL") ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" /> :
-                       indicator.includes("WARNING") ? <Clock className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" /> :
-                       indicator.includes("RESOLVED") ? <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 mt-0.5 flex-shrink-0" /> :
-                       indicator.includes("REDUCED") ? <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 mt-0.5 flex-shrink-0" /> :
-                       <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />}
-                      <p className={cn("text-sm",
-                        indicator.includes("CRITICAL") ? "text-red-700 font-medium" :
-                        indicator.includes("WARNING") ? "text-amber-700" :
-                        indicator.includes("RESOLVED") ? "text-blue-600" :
-                        indicator.includes("REDUCED") ? "text-teal-600" :
-                        "text-gray-600"
-                      )}>{indicator}</p>
-                    </div>
-                  ))}
+                <div className="space-y-2.5">
+                  {riskIndicators?.map((indicator, i) => {
+                    const level = alertLevel(indicator);
+                    const style = ALERT_STYLES[level];
+                    const { label, body } = splitLabel(indicator.replace(/^\s*(CRITICAL|WARNING|RESOLVED|REDUCED)\s*:\s*/, ""));
+                    return (
+                      <div key={i} className={cn("rounded-lg border border-l-4 p-3", style.card)}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          {level === "critical" || level === "warning" ? <AlertTriangle className={cn("w-3.5 h-3.5", style.icon)} /> : <CheckCircle2 className={cn("w-3.5 h-3.5", style.icon)} />}
+                          <span className={cn("text-xs font-bold uppercase tracking-wider", style.title)}>{label || style.fallbackTitle}</span>
+                          <span className={cn("ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded", style.badge)}>{style.badgeText}</span>
+                        </div>
+                        <CitedText text={body} {...citeProps} />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -707,9 +789,13 @@ export default function CaseDetailPage() {
                     prose-li:text-sm prose-li:text-gray-700 prose-li:my-0.5
                     prose-p:text-sm prose-p:text-gray-600 prose-p:leading-relaxed
                     prose-strong:text-gray-800">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                      {activeAssessment.clinicalProfileMd}
-                    </ReactMarkdown>
+                    {/^\s*#/m.test(activeAssessment.clinicalProfileMd) ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                        {activeAssessment.clinicalProfileMd}
+                      </ReactMarkdown>
+                    ) : (
+                      <div className="not-prose"><LabeledLines text={activeAssessment.clinicalProfileMd} {...citeProps} /></div>
+                    )}
                   </div>
                 </div>
               )}
@@ -721,7 +807,7 @@ export default function CaseDetailPage() {
                   <h3 className="text-xs font-bold text-blue-600 uppercase tracking-wider">Recommended Next Steps</h3>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-gray-700 leading-relaxed font-medium">{recommendedAction}</p>
+                  {recommendedAction && <NumberedSteps text={recommendedAction} {...citeProps} />}
                 </div>
               </div>
 
@@ -729,7 +815,7 @@ export default function CaseDetailPage() {
               {activeAssessment?.routingRationale && (
                 <div className="bg-gray-50 rounded-lg p-3 border border-acme-border/50">
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">Routing Rationale</span>
-                  <p className="text-[11px] text-gray-600 leading-relaxed">{activeAssessment.routingRationale}</p>
+                  <CitedText text={activeAssessment.routingRationale} {...citeProps} className="text-xs text-gray-600" />
                 </div>
               )}
 
@@ -746,12 +832,7 @@ export default function CaseDetailPage() {
               {activeAssessment && <span className="text-[9px] text-gray-400 font-normal ml-1">({activeAssessment.label})</span>}
             </h3>
             <div className="flex items-center gap-3 mb-2">
-              <span className={cn("text-2xl font-bold",
-                assessmentScore <= 30 ? "text-green-600" :
-                assessmentScore <= 60 ? "text-amber-600" :
-                assessmentScore <= 80 ? "text-acme-orange" :
-                "text-red-600"
-              )}>
+              <span className={cn("text-2xl font-bold", SCORE_BAND_TEXT[scoreBand(assessmentScore)])}>
                 {assessmentScore}
               </span>
               <span className="text-sm text-gray-400">/100</span>
@@ -763,12 +844,7 @@ export default function CaseDetailPage() {
             </div>
             <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
               <motion.div
-                className={cn("h-full rounded-full",
-                  assessmentScore <= 30 ? "bg-green-500" :
-                  assessmentScore <= 60 ? "bg-amber-500" :
-                  assessmentScore <= 80 ? "bg-acme-orange" :
-                  "bg-red-500"
-                )}
+                className={cn("h-full rounded-full", SCORE_BAND_BAR[scoreBand(assessmentScore)])}
                 initial={{ width: "0%" }}
                 animate={{ width: `${assessmentScore}%` }}
                 transition={{ duration: 1.5, ease: "easeOut" }}
@@ -784,32 +860,19 @@ export default function CaseDetailPage() {
             <div className="space-y-3">
               <RiskThermometer label="Clinical" value={vectors.clinical} subscript="V_c" />
               {vectorLabels?.clinical && (
-                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
-                  vectorLabels.clinical === "STABLE" ? "bg-green-50 text-green-600" :
-                  vectorLabels.clinical === "IMPROVING" ? "bg-blue-50 text-blue-600" :
-                  "bg-red-50 text-red-600"
-                )}>{vectorLabels.clinical}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block", tagBadgeClass("clinical", vectorLabels.clinical))}>{vectorLabels.clinical}</span>
               )}
               <RiskThermometer label="Documentation" value={vectors.documentation} subscript="V_d" />
               {vectorLabels?.documentation && (
-                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
-                  vectorLabels.documentation === "COMPLETE" ? "bg-green-50 text-green-600" :
-                  "bg-red-50 text-red-600"
-                )}>{vectorLabels.documentation}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block", tagBadgeClass("documentation", vectorLabels.documentation))}>{vectorLabels.documentation}</span>
               )}
               <RiskThermometer label="Discrepancy" value={vectors.discrepancy} subscript="V_i" />
               {vectorLabels?.discrepancy && (
-                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
-                  vectorLabels.discrepancy === "NO CONTRADICTION" ? "bg-green-50 text-green-600" :
-                  "bg-red-50 text-red-600"
-                )}>{vectorLabels.discrepancy}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block", tagBadgeClass("discrepancy", vectorLabels.discrepancy))}>{vectorLabels.discrepancy}</span>
               )}
               <RiskThermometer label="Behavioral" value={vectors.behavioral} subscript="V_b" />
               {vectorLabels?.behavioral && (
-                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
-                  vectorLabels.behavioral === "CALM" ? "bg-green-50 text-green-600" :
-                  "bg-red-50 text-red-600"
-                )}>{vectorLabels.behavioral}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block", tagBadgeClass("behavioral", vectorLabels.behavioral))}>{vectorLabels.behavioral}</span>
               )}
             </div>
           </div>
@@ -854,22 +917,49 @@ export default function CaseDetailPage() {
               <span className="text-sm sm:text-base font-mono font-bold text-acme-orange uppercase">{caseData.id}</span>
               <h1 className="text-base sm:text-lg lg:text-xl font-bold text-acme-teal truncate">{caseData.claimantName}</h1>
               <StatusBadge status={caseData.status} />
-              <span className={cn("text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded", caseData.complexityScore <= 30 ? "bg-green-50 text-green-700" : caseData.complexityScore <= 60 ? "bg-amber-50 text-amber-700" : caseData.complexityScore <= 80 ? "bg-acme-orange/10 text-acme-orange" : "bg-red-50 text-red-700")}>
+              <span className={cn("text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded", SCORE_BAND_SOFT[scoreBand(caseData.complexityScore)])}>
                 Score: {caseData.complexityScore}/100
               </span>
             </div>
             <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">
-              {caseData.policyNumber} — {caseData.diagnosis}
+              {caseData.policyNumber} — {diagnosis}
             </p>
           </div>
         </div>
         <button
-          onClick={() => setToastMessage("Document analysis started for " + selectedDocs.size + " selected document(s) in " + caseData.id)}
-          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-acme-orange text-white text-xs sm:text-sm font-medium hover:bg-acme-orange/90 transition-colors flex-shrink-0"
+          onClick={() => startRun(caseData.id)}
+          disabled={isAssessing}
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-acme-orange text-white text-xs sm:text-sm font-medium hover:bg-acme-orange/90 transition-colors flex-shrink-0 disabled:opacity-60"
         >
-          <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Trigger Analysis
+          {isAssessing ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+          {isAssessing ? "AI Assessment Running..." : "Run AI Assessment"}
         </button>
       </div>
+
+      {assessmentRun && (
+        <div className={cn("flex items-start gap-2 rounded-lg border px-4 py-3 text-sm",
+          assessmentRun.phase === "error" ? "bg-red-50 border-red-200 text-red-700" :
+          assessmentRun.phase === "done" ? "bg-green-50 border-green-200 text-green-700" :
+          "bg-blue-50 border-blue-200 text-blue-700"
+        )}>
+          {assessmentRun.phase === "error" ? <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
+            assessmentRun.phase === "done" ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
+            <Loader2 className="w-4 h-4 mt-0.5 flex-shrink-0 animate-spin" />}
+          <div className="flex-1 min-w-0">
+            {assessmentRun.phase === "starting" && <p>Starting the LTC New workflow in Agentic Studio for {caseData.id}...</p>}
+            {assessmentRun.phase === "running" && (
+              <p>AI agents are assessing the claim (intake, clinical, policy &amp; risk, scoring, routing, briefing) — {Math.round((Date.now() - assessmentRun.startedAt) / 1000)}s elapsed. Execution {assessmentRun.executionId}</p>
+            )}
+            {assessmentRun.phase === "done" && <p>Assessment saved: {assessmentRun.summary}</p>}
+            {assessmentRun.phase === "error" && <p className="break-words">AI assessment failed: {assessmentRun.message}</p>}
+          </div>
+          {(assessmentRun.phase === "done" || assessmentRun.phase === "error") && (
+            <button onClick={() => dismissRun(caseData.id)} className="p-0.5 rounded hover:bg-black/5">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Main Tab Switcher */}
       <div className="flex items-center gap-1 border-b border-acme-border overflow-x-auto">
@@ -958,7 +1048,7 @@ export default function CaseDetailPage() {
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Diagnosis</span>
-                  <p className="text-sm font-medium text-gray-900">{caseData.diagnosis}</p>
+                  <p className="text-sm font-medium text-gray-900">{diagnosis}</p>
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Filing Date</span>
@@ -966,7 +1056,7 @@ export default function CaseDetailPage() {
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Elimination Period</span>
-                  <p className="text-sm font-medium text-gray-900">{caseData.eliminationPeriod || "N/A"}</p>
+                  <p className="text-sm font-medium text-gray-900">{eliminationPeriod || "N/A"}</p>
                 </div>
                 <div>
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Status</span>
@@ -992,10 +1082,10 @@ export default function CaseDetailPage() {
                 </div>
               </div>
               {/* Case Description */}
-              {caseData.summary && (
+              {caseSummary && (
                 <div className="mt-4 pt-4 border-t border-acme-border/50">
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1">Case Description</span>
-                  <p className="text-sm text-gray-600 leading-relaxed">{caseData.summary}</p>
+                  <CitedText text={caseSummary} {...citeProps} className="text-gray-600" />
                 </div>
               )}
             </div>
