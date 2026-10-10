@@ -28,6 +28,15 @@ export default function HomePage() {
   const stpRate = cases.length > 0 ? Math.round((cases.filter((c) => c.status === "auto_approved").length / cases.length) * 100) : 0;
   const escalatedToday = cases.filter((c) => c.status === "escalated").length;
   const pendingReview = cases.filter((c) => c.status === "in_review" || c.status === "pending").length;
+  const skillSets = useClaimsStore((s) => s.skillSets);
+  const activeCases = cases.filter((c) => c.status !== "closed");
+  const avgComplexity = activeCases.length
+    ? (activeCases.reduce((sum, c) => sum + c.complexityScore, 0) / activeCases.length).toFixed(1)
+    : "—";
+  const allDocuments = cases.flatMap((c) => c.documents);
+  const documentsProcessed = allDocuments.filter((d) => d.status !== "pending").length;
+  const liveAssessments = cases.flatMap((c) => c.assessments).filter((a) => a.id.startsWith("live-")).length;
+  const adjusters = skillSets.reduce((sum, s) => sum + s.userCount, 0);
 
   const handleCreateClaim = () => {
     if (!formData.claimantName || !formData.policyNumber) return;
@@ -111,7 +120,6 @@ export default function HomePage() {
           subtitle="Across all product lines"
           icon={Activity}
           color="orange"
-          trend={{ value: "12% vs last week", positive: false }}
         />
         <MetricCard
           title="Straight-Through Processing %"
@@ -119,15 +127,13 @@ export default function HomePage() {
           subtitle="Claims auto reviewed for human based approval"
           icon={Zap}
           color="green"
-          trend={{ value: "3.2% improvement", positive: true }}
         />
         <MetricCard
-          title="Fatal Overrides Today"
+          title="Escalated Claims"
           value={isLoading ? "—" : escalatedToday}
-          subtitle="Auto-escalated by rules engine"
+          subtitle="Routed for investigation"
           icon={AlertTriangle}
           color="red"
-          trend={{ value: "1 more than yesterday", positive: false }}
         />
         <MetricCard
           title="Pending Review"
@@ -140,10 +146,10 @@ export default function HomePage() {
 
       {/* Secondary Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <MetricCard title="Avg. Complexity Score" value="48.2" icon={TrendingUp} color="teal" subtitle="Across all active claims" />
-        <MetricCard title="Documents Processed" value="1,247" icon={FileStack} color="blue" subtitle="This month" trend={{ value: "156 today", positive: true }} />
-        <MetricCard title="AI Accuracy Rate" value="94.7%" icon={CheckCircle2} color="purple" subtitle="Validated against adjuster decisions" />
-        <MetricCard title="Active Adjusters" value="27" icon={Users} color="orange" subtitle="Across 4 skill tiers" />
+        <MetricCard title="Avg. Complexity Score" value={isLoading ? "—" : avgComplexity} icon={TrendingUp} color="teal" subtitle="Across all active claims" />
+        <MetricCard title="Documents Processed" value={isLoading ? "—" : documentsProcessed} icon={FileStack} color="blue" subtitle={`Of ${allDocuments.length} uploaded`} />
+        <MetricCard title="Live AI Assessments" value={isLoading ? "—" : liveAssessments} icon={CheckCircle2} color="purple" subtitle="LTC New workflow runs saved" />
+        <MetricCard title="Active Adjusters" value={isLoading ? "—" : adjusters} icon={Users} color="orange" subtitle={`Across ${skillSets.length} skill tiers`} />
       </div>
 
       {/* Main Content */}

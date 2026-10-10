@@ -4,22 +4,17 @@ import { useRouter } from "next/navigation";
 import { useClaimsStore } from "@/store/claims-store";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { cn } from "@/lib/utils";
+import { scoreBand, SCORE_BAND_TEXT, SCORE_BAND_TINT } from "@/lib/score-bands";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock, ExternalLink, XCircle } from "lucide-react";
 
 function getScoreColor(score: number) {
-  if (score <= 30) return "text-green-600";
-  if (score <= 60) return "text-amber-600";
-  if (score <= 80) return "text-acme-orange";
-  return "text-red-600";
+  return SCORE_BAND_TEXT[scoreBand(score)];
 }
 
 function getScoreBg(score: number) {
-  if (score <= 30) return "bg-green-500/10";
-  if (score <= 60) return "bg-amber-500/10";
-  if (score <= 80) return "bg-acme-orange/10";
-  return "bg-red-500/10";
+  return SCORE_BAND_TINT[scoreBand(score)];
 }
 
 export default function CasesTable() {
