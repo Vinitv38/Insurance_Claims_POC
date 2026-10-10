@@ -44,6 +44,16 @@ const VECTOR_TAXONOMY: Record<string, TaxonomyEntry[]> = {
   ],
 };
 
+// Badge colour follows the tag's taxonomy weight; labels may use spaces or underscores.
+export function tagBadgeClass(vector: keyof typeof VECTOR_TAXONOMY, label: string): string {
+  const key = label.trim().toUpperCase().replace(/\s+/g, "_");
+  const entry = VECTOR_TAXONOMY[vector]?.find((t) => t.label === key);
+  if (!entry) return "bg-gray-100 text-gray-600";
+  if (entry.score <= 0.2) return "bg-green-50 text-green-600";
+  if (entry.score <= 0.6) return "bg-amber-50 text-amber-600";
+  return "bg-red-50 text-red-600";
+}
+
 interface RiskThermometerProps {
   label: string;
   value: number;

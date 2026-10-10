@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useClaimsStore } from "@/store/claims-store";
-import RiskThermometer from "@/components/ui/RiskThermometer";
+import RiskThermometer, { tagBadgeClass } from "@/components/ui/RiskThermometer";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -834,32 +834,19 @@ export default function CaseDetailPage() {
             <div className="space-y-3">
               <RiskThermometer label="Clinical" value={vectors.clinical} subscript="V_c" />
               {vectorLabels?.clinical && (
-                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
-                  vectorLabels.clinical === "STABLE" ? "bg-green-50 text-green-600" :
-                  vectorLabels.clinical === "IMPROVING" ? "bg-blue-50 text-blue-600" :
-                  "bg-red-50 text-red-600"
-                )}>{vectorLabels.clinical}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block", tagBadgeClass("clinical", vectorLabels.clinical))}>{vectorLabels.clinical}</span>
               )}
               <RiskThermometer label="Documentation" value={vectors.documentation} subscript="V_d" />
               {vectorLabels?.documentation && (
-                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
-                  vectorLabels.documentation === "COMPLETE" ? "bg-green-50 text-green-600" :
-                  "bg-red-50 text-red-600"
-                )}>{vectorLabels.documentation}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block", tagBadgeClass("documentation", vectorLabels.documentation))}>{vectorLabels.documentation}</span>
               )}
               <RiskThermometer label="Discrepancy" value={vectors.discrepancy} subscript="V_i" />
               {vectorLabels?.discrepancy && (
-                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
-                  vectorLabels.discrepancy === "NO CONTRADICTION" ? "bg-green-50 text-green-600" :
-                  "bg-red-50 text-red-600"
-                )}>{vectorLabels.discrepancy}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block", tagBadgeClass("discrepancy", vectorLabels.discrepancy))}>{vectorLabels.discrepancy}</span>
               )}
               <RiskThermometer label="Behavioral" value={vectors.behavioral} subscript="V_b" />
               {vectorLabels?.behavioral && (
-                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block",
-                  vectorLabels.behavioral === "CALM" ? "bg-green-50 text-green-600" :
-                  "bg-red-50 text-red-600"
-                )}>{vectorLabels.behavioral}</span>
+                <span className={cn("text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ml-6 -mt-1 inline-block", tagBadgeClass("behavioral", vectorLabels.behavioral))}>{vectorLabels.behavioral}</span>
               )}
             </div>
           </div>
