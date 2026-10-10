@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import {
   fetchAllClaims,
+  fetchClaimById,
   fetchSkillSets,
   fetchFatalOverrides,
   insertClaim,
@@ -143,6 +144,7 @@ interface ClaimsState {
   isInitialized: boolean;
 
   initializeFromSupabase: () => Promise<void>;
+  refreshCase: (id: string) => Promise<void>;
   selectCase: (id: string) => void;
   setVectorWeights: (weights: { clinical: number; documentation: number; discrepancy: number; behavioral: number }) => void;
   addSkillSet: (skillSet: SkillSet) => void;
@@ -328,6 +330,12 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
       console.error(`[ClaimsStore] Supabase fetch failed after ${elapsed}ms:`, error);
       set({ isInitialized: true, isLoading: false });
     }
+  },
+
+  refreshCase: async (id) => {
+    const fresh = await fetchClaimById(id);
+    if (!fresh) throw new Error(`Claim ${id} not found in Supabase`);
+    set((state) => ({ cases: state.cases.map((c) => (c.id === id ? fresh : c)) }));
   },
 
   selectCase: (id) => set({ selectedCaseId: id }),

@@ -21,6 +21,15 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 
 type MainTab = "overview" | "decision" | "audit";
+
+type AssessmentRun =
+  | { phase: "idle" }
+  | { phase: "starting" }
+  | { phase: "running"; executionId: string; elapsedSec: number }
+  | { phase: "done"; summary: string }
+  | { phase: "error"; message: string };
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 type DocViewTab = "original" | "schema" | "interpreted";
 
 const LIFECYCLE_STAGES = [
@@ -52,6 +61,7 @@ export default function CaseDetailPage() {
   const isInitialized = useClaimsStore((s) => s.isInitialized);
   const activeDocumentId = useClaimsStore((s) => s.activeDocumentId);
   const setActiveDocument = useClaimsStore((s) => s.setActiveDocument);
+  const refreshCase = useClaimsStore((s) => s.refreshCase);
 
   const [mainTab, setMainTab] = useState<MainTab>("overview");
   const [docViewTab, setDocViewTab] = useState<DocViewTab>("original");
@@ -64,6 +74,7 @@ export default function CaseDetailPage() {
   const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(null);
   const [fetchedFileContent, setFetchedFileContent] = useState<Record<string, string>>({});
   const [fetchingFile, setFetchingFile] = useState(false);
+  const [assessmentRun, setAssessmentRun] = useState<AssessmentRun>({ phase: "idle" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
 
@@ -126,6 +137,45 @@ export default function CaseDetailPage() {
   const caseData = currentCase;
   const activeDoc = caseData.documents.find((d) => d.id === activeDocumentId);
   const currentStage = getLifecycleStage(caseData.status);
+
+  async function runAssessment() {
+    setAssessmentRun({ phase: "starting" });
+    try {
+      const triggerRes = await fetch("/api/assessments/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claimId: caseData.id }),
+      });
+      const trigger = await triggerRes.json();
+      if (!triggerRes.ok) throw new Error(trigger.error || `Trigger failed (HTTP ${triggerRes.status})`);
+
+      const { executionId, pollIntervalMs, maxWaitMs } = trigger as { executionId: string; pollIntervalMs: number; maxWaitMs: number };
+      const startedAt = Date.now();
+      while (Date.now() - startedAt < maxWaitMs) {
+        setAssessmentRun({ phase: "running", executionId, elapsedSec: Math.round((Date.now() - startedAt) / 1000) });
+        await sleep(pollIntervalMs);
+        const statusRes = await fetch(`/api/assessments/status/${encodeURIComponent(executionId)}?claimId=${encodeURIComponent(caseData.id)}`);
+        const status = await statusRes.json();
+        if (!statusRes.ok) throw new Error(status.error || `Status check failed (HTTP ${statusRes.status})`);
+        if (status.status === "completed") {
+          await refreshCase(caseData.id);
+          setActiveAssessmentId(status.assessmentId);
+          setMainTab("decision");
+          setAssessmentRun({
+            phase: "done",
+            summary: `${status.recommendation} — score ${status.complexityScore}, routed to ${status.assignedTo} (${status.assignedGroup})`,
+          });
+          return;
+        }
+      }
+      throw new Error(`Workflow did not finish within ${Math.round(maxWaitMs / 1000)} seconds (execution ${executionId})`);
+    } catch (err) {
+      console.error("[LTC New] Assessment failed:", err);
+      setAssessmentRun({ phase: "error", message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  const isAssessing = assessmentRun.phase === "starting" || assessmentRun.phase === "running";
 
   /* Helper: determine file extension from name or URL */
   function getFileExtension(doc: Document): string {
@@ -864,12 +914,39 @@ export default function CaseDetailPage() {
           </div>
         </div>
         <button
-          onClick={() => setToastMessage("Document analysis started for " + selectedDocs.size + " selected document(s) in " + caseData.id)}
-          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-acme-orange text-white text-xs sm:text-sm font-medium hover:bg-acme-orange/90 transition-colors flex-shrink-0"
+          onClick={runAssessment}
+          disabled={isAssessing}
+          className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-acme-orange text-white text-xs sm:text-sm font-medium hover:bg-acme-orange/90 transition-colors flex-shrink-0 disabled:opacity-60"
         >
-          <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Trigger Analysis
+          {isAssessing ? <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" /> : <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+          {isAssessing ? "AI Assessment Running..." : "Run AI Assessment"}
         </button>
       </div>
+
+      {assessmentRun.phase !== "idle" && (
+        <div className={cn("flex items-start gap-2 rounded-lg border px-4 py-3 text-sm",
+          assessmentRun.phase === "error" ? "bg-red-50 border-red-200 text-red-700" :
+          assessmentRun.phase === "done" ? "bg-green-50 border-green-200 text-green-700" :
+          "bg-blue-50 border-blue-200 text-blue-700"
+        )}>
+          {assessmentRun.phase === "error" ? <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
+            assessmentRun.phase === "done" ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
+            <Loader2 className="w-4 h-4 mt-0.5 flex-shrink-0 animate-spin" />}
+          <div className="flex-1 min-w-0">
+            {assessmentRun.phase === "starting" && <p>Starting the LTC New workflow in Agentic Studio for {caseData.id}...</p>}
+            {assessmentRun.phase === "running" && (
+              <p>AI agents are assessing the claim (intake, clinical, policy &amp; risk, scoring, routing, briefing) — {assessmentRun.elapsedSec}s elapsed. Execution {assessmentRun.executionId}</p>
+            )}
+            {assessmentRun.phase === "done" && <p>Assessment saved: {assessmentRun.summary}</p>}
+            {assessmentRun.phase === "error" && <p className="break-words">AI assessment failed: {assessmentRun.message}</p>}
+          </div>
+          {(assessmentRun.phase === "done" || assessmentRun.phase === "error") && (
+            <button onClick={() => setAssessmentRun({ phase: "idle" })} className="p-0.5 rounded hover:bg-black/5">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Main Tab Switcher */}
       <div className="flex items-center gap-1 border-b border-acme-border overflow-x-auto">
