@@ -67,8 +67,14 @@ export interface ParsedAssessment {
   scoringManifestMd?: string;
 }
 
+// Removes "[label](#document-...)" citation links; the full briefing (ai_output_md) keeps them.
 function clean(line: string): string {
-  return line.replace(/\*\*/g, "").replace(/^\s*(?:--|-|\*|•)\s*/, "").trim();
+  return line
+    .replace(/\[[^\]]*\]\(#document-[^)]*\)/g, "")
+    .replace(/\*\*/g, "")
+    .replace(/^\s*(?:--|-|\*|•)\s*/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 function field(lines: string[], label: string): string | undefined {

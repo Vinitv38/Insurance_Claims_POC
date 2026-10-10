@@ -53,10 +53,16 @@ async function studioFetch(url: string, init: RequestInit): Promise<Record<strin
   }
 }
 
+// `message` must be a string, so structured input is sent as JSON text. `async_mode` makes Studio return the
+// execution_id immediately; without it the call blocks until the workflow finishes and the gateway times out.
 export async function triggerWorkflow(workflowUrlEnv: string, message: Record<string, unknown>): Promise<string> {
   const data = await studioFetch(requireEnv(workflowUrlEnv), {
     method: "POST",
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({
+      message: JSON.stringify(message),
+      async_mode: true,
+      timeout: Math.round(getPollingConfig().maxWaitMs / 1000),
+    }),
   });
   const executionId = data.execution_id;
   if (typeof executionId !== "string" || !executionId) {
@@ -78,7 +84,14 @@ export async function getExecution(executionId: string): Promise<ExecutionResult
 
   const output = (data.output || {}) as { nodes?: ExecutionNode[] };
   const error = typeof data.error === "string" ? data.error : data.error ? JSON.stringify(data.error) : undefined;
-  return { status, nodes: Array.isArray(output.nodes) ? output.nodes : [], error };
+  // Studio returns each node as { node, node_id, response }; the guide documents { name, response }.
+  const nodes = Array.isArray(output.nodes)
+    ? output.nodes.map((n) => {
+        const raw = n as unknown as Record<string, unknown>;
+        return { name: String(raw.name ?? raw.node ?? raw.node_id ?? ""), response: raw.response };
+      })
+    : [];
+  return { status, nodes, error };
 }
 
 export function nodeText(response: unknown): string {
