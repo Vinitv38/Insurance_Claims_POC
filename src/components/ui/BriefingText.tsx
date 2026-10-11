@@ -19,7 +19,7 @@ export interface BriefingSegment {
 const FILE_EXT = /\.(pdf|txt|csv|json|tiff?|png|jpe?g|docx?)\b/i;
 // Workflow links "[label](#target)" and seeded source lists "[File_A.pdf, File_B.pdf]".
 const CITATION = /\[([^\]]+)\]\(#([^)]+)\)|\[([^\]]+)\](?!\()/g;
-const SEPARATOR = /^[\s();,]*(vs\.?)?[\s();,]*$/i;
+const SEPARATOR = /^[\s();,|]*(vs\.?)?[\s();,|]*$/i;
 
 function tokenize(text: string): Token[] {
   const tokens: Token[] = [];
@@ -43,7 +43,7 @@ function tokenize(text: string): Token[] {
 }
 
 function tidy(text: string): string {
-  return text.replace(/\(\s*$/, "").replace(/^\s*[);,.]+/, "").replace(/\s{2,}/g, " ").trim();
+  return text.replace(/\(\s*$/, "").replace(/^\s*[);,.|]+/, "").replace(/\s{2,}/g, " ").trim();
 }
 
 /** Splits text into statements, each followed by the sources that back it. */
