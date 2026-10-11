@@ -16,7 +16,8 @@ import {
   FileSpreadsheet, ZoomIn, ZoomOut, Plus, Play, History
 } from "lucide-react";
 import type { Document } from "@/store/claims-store";
-import { uploadDocumentFile, insertDocument, updateDocumentMarkdown } from "@/lib/supabase-api";
+import { useDocumentUploads } from "@/store/document-uploads";
+import { processingError } from "@/lib/document-processing-status";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
@@ -55,6 +56,11 @@ function getLifecycleStage(status: string): number {
   }
 }
 
+function docStatusLabel(doc: Document): string {
+  if (processingError(doc.flagReason)) return "failed";
+  return doc.status;
+}
+
 export default function CaseDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -68,7 +74,6 @@ export default function CaseDetailPage() {
   const [mainTab, setMainTab] = useState<MainTab>("overview");
   const [docViewTab, setDocViewTab] = useState<DocViewTab>("original");
   const [imageZoom, setImageZoom] = useState(100);
-  const [isUploading, setIsUploading] = useState(false);
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [docModalOpen, setDocModalOpen] = useState(false);
@@ -80,6 +85,10 @@ export default function CaseDetailPage() {
   const startRun = useAssessmentRuns((s) => s.startRun);
   const resumeRuns = useAssessmentRuns((s) => s.resumeRuns);
   const dismissRun = useAssessmentRuns((s) => s.dismiss);
+  const uploadJob = useDocumentUploads((s) => s.jobs[caseId]);
+  const uploadDocuments = useDocumentUploads((s) => s.uploadDocuments);
+  const dismissUpload = useDocumentUploads((s) => s.dismiss);
+  const isUploading = uploadJob?.phase === "uploading" || uploadJob?.phase === "processing";
   const [, setClockTick] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
@@ -961,6 +970,40 @@ export default function CaseDetailPage() {
         </div>
       )}
 
+      {uploadJob && (
+        <div className={cn("flex items-start gap-2 rounded-lg border px-4 py-3 text-sm",
+          uploadJob.phase === "error" ? "bg-red-50 border-red-200 text-red-700" :
+          uploadJob.phase === "done" ? "bg-green-50 border-green-200 text-green-700" :
+          "bg-blue-50 border-blue-200 text-blue-700"
+        )}>
+          {uploadJob.phase === "error" ? <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
+            uploadJob.phase === "done" ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
+            <Loader2 className="w-4 h-4 mt-0.5 flex-shrink-0 animate-spin" />}
+          <div className="flex-1 min-w-0">
+            {uploadJob.phase === "uploading" && <p>Uploading {uploadJob.total} document(s) to Supabase Storage...</p>}
+            {uploadJob.phase === "processing" && (
+              <p>Reading documents with Azure Document Intelligence — {uploadJob.done} of {uploadJob.total} done.</p>
+            )}
+            {uploadJob.phase === "done" && (
+              <p>
+                {uploadJob.total} document(s) processed.{" "}
+                {uploadJob.autoStarted
+                  ? "All documents are ready, so the LTC New assessment was started automatically."
+                  : caseData.assessments.length > 0
+                    ? "This claim already has an assessment, so it was not re-run automatically."
+                    : "Some documents are not processed yet, so the assessment was not started."}
+              </p>
+            )}
+            {uploadJob.phase === "error" && <p className="break-words">Document upload failed: {uploadJob.message}</p>}
+          </div>
+          {(uploadJob.phase === "done" || uploadJob.phase === "error") && (
+            <button onClick={() => dismissUpload(caseData.id)} className="p-0.5 rounded hover:bg-black/5">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Main Tab Switcher */}
       <div className="flex items-center gap-1 border-b border-acme-border overflow-x-auto">
         <button
@@ -1111,44 +1154,9 @@ export default function CaseDetailPage() {
                         onChange={async (e) => {
                           const files = e.target.files;
                           if (!files || files.length === 0) return;
-                          setIsUploading(true);
-                          try {
-                            for (const file of Array.from(files)) {
-                              const publicUrl = await uploadDocumentFile(file, caseId);
-                              const docId = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-                              const newDoc: Document = {
-                                id: docId,
-                                name: file.name,
-                                type: "other",
-                                day: 1,
-                                status: "pending",
-                                vectorAffected: "documentation",
-                                filePath: publicUrl,
-                              };
-                              await insertDocument(caseId, newDoc);
-
-                              // Trigger Azure Document Intelligence analysis in background
-                              fetch("/api/analyze-document", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ fileUrl: publicUrl }),
-                              })
-                                .then((res) => res.json())
-                                .then((data) => {
-                                  if (data.markdown) {
-                                    updateDocumentMarkdown(docId, data.markdown, data.jsonResult).catch(console.error);
-                                  }
-                                })
-                                .catch(console.error);
-                            }
-                            window.location.reload();
-                          } catch (err) {
-                            console.error("Upload failed:", err);
-                            setToastMessage("Upload failed. Check console for details.");
-                          } finally {
-                            setIsUploading(false);
-                            if (fileInputRef.current) fileInputRef.current.value = "";
-                          }
+                          const picked = Array.from(files);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                          void uploadDocuments(caseId, picked);
                         }}
                       />
                       <button
@@ -1157,7 +1165,7 @@ export default function CaseDetailPage() {
                         className="flex items-center gap-1 px-2 py-1 rounded-lg bg-acme-orange text-white text-[10px] font-medium hover:bg-acme-orange/90 transition-colors disabled:opacity-50"
                       >
                         {isUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                        {isUploading ? "Uploading..." : "Upload"}
+                        {uploadJob?.phase === "uploading" ? "Uploading..." : uploadJob?.phase === "processing" ? `Reading ${uploadJob.done}/${uploadJob.total}...` : "Upload"}
                       </button>
                     </div>
                   </div>
@@ -1190,8 +1198,11 @@ export default function CaseDetailPage() {
                         <div className="flex-1 min-w-0">
                           <span className="text-xs font-medium text-gray-700 truncate block">{doc.name}</span>
                           <span className="text-[10px] text-gray-400">Day {doc.day}</span>
+                          {processingError(doc.flagReason) && (
+                            <span className="text-[10px] text-red-600 block break-words">{processingError(doc.flagReason)}</span>
+                          )}
                         </div>
-                        <StatusBadge status={doc.status} />
+                        <StatusBadge status={docStatusLabel(doc)} />
                       </div>
                     ))}
                   </div>

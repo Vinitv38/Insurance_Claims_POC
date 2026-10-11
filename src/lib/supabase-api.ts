@@ -268,6 +268,16 @@ export async function fetchFatalOverrides(): Promise<FatalOverride[]> {
 
 /* ===== MUTATION OPERATIONS ===== */
 
+export async function nextClaimId(): Promise<string> {
+  const { data, error } = await supabase.from("claims").select("id");
+  if (error) throw error;
+  const max = (data || []).reduce((m: number, row: { id: string }) => {
+    const n = /^claim-(\d+)$/.exec(row.id)?.[1];
+    return n ? Math.max(m, parseInt(n, 10)) : m;
+  }, 0);
+  return `claim-${String(max + 1).padStart(3, "0")}`;
+}
+
 export async function insertClaim(claim: ClaimCase): Promise<ClaimCase> {
   const { error: claimError } = await supabase.from("claims").insert({
     id: claim.id,

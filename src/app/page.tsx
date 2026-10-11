@@ -6,13 +6,18 @@ import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import { useClaimsStore } from "@/store/claims-store";
 import { Activity, Zap, AlertTriangle, CheckCircle2, Clock, TrendingUp, FileStack, Users, Plus, X } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { nextClaimId } from "@/lib/supabase-api";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ClaimCase } from "@/store/claims-store";
 
 export default function HomePage() {
   const cases = useClaimsStore((s) => s.cases);
   const addCase = useClaimsStore((s) => s.addCase);
+  const router = useRouter();
   const [showNewClaim, setShowNewClaim] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     claimantName: "",
     policyNumber: "",
@@ -38,57 +43,67 @@ export default function HomePage() {
   const liveAssessments = cases.flatMap((c) => c.assessments).filter((a) => a.id.startsWith("live-")).length;
   const adjusters = skillSets.reduce((sum, s) => sum + s.userCount, 0);
 
-  const handleCreateClaim = () => {
+  const handleCreateClaim = async () => {
     if (!formData.claimantName || !formData.policyNumber) return;
+    setIsCreating(true);
+    setCreateError(null);
+    try {
 
-    const now = new Date();
-    const dateStr = now.toISOString().split("T")[0];
-    const age = formData.dateOfBirth
-      ? Math.floor((now.getTime() - new Date(formData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-      : 0;
+      const now = new Date();
+      const dateStr = now.toISOString().split("T")[0];
+      const age = formData.dateOfBirth
+        ? Math.floor((now.getTime() - new Date(formData.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        : 0;
 
-    const newCase: ClaimCase = {
-      id: `case-${String(cases.length + 1).padStart(3, "0")}`,
-      claimantName: formData.claimantName,
-      policyNumber: formData.policyNumber,
-      claimType: formData.claimType,
-      dateOfBirth: formData.dateOfBirth || "N/A",
-      age,
-      diagnosis: formData.diagnosis || "Pending Assessment",
-      status: "pending",
-      assignedTo: formData.assignedTo || "Unassigned",
-      assignedGroup: formData.assignedGroup,
-      complexityScore: 0,
-      vectors: { clinical: 0, documentation: 0, discrepancy: 0, behavioral: 0 },
-      documents: [],
-      auditHistory: [
-        {
-          timestamp: now.toISOString(),
-          action: "CLAIM_CREATED",
-          detail: `New ${formData.claimType} claim initiated manually`,
-          user: "Current User",
-          scoreChange: { from: 0, to: 0 },
-        },
-      ],
-      assessments: [],
-      summary: "New claim — pending initial AI assessment and document upload.",
-      riskIndicators: ["INFO: Awaiting initial document upload and AI scoring"],
-      recommendedAction: "Upload initial documentation to begin AI assessment.",
-      filingDate: dateStr,
-      lastUpdated: dateStr,
-    };
+      const newCase: ClaimCase = {
+        id: await nextClaimId(),
+        claimantName: formData.claimantName,
+        policyNumber: formData.policyNumber,
+        claimType: formData.claimType,
+        dateOfBirth: formData.dateOfBirth || "N/A",
+        age,
+        diagnosis: formData.diagnosis || "Pending Assessment",
+        status: "pending",
+        assignedTo: formData.assignedTo || "Unassigned",
+        assignedGroup: formData.assignedGroup,
+        complexityScore: 0,
+        vectors: { clinical: 0, documentation: 0, discrepancy: 0, behavioral: 0 },
+        documents: [],
+        auditHistory: [
+          {
+            timestamp: now.toISOString(),
+            action: "CLAIM_CREATED",
+            detail: `New ${formData.claimType} claim initiated manually`,
+            user: "Current User",
+            scoreChange: { from: 0, to: 0 },
+          },
+        ],
+        assessments: [],
+        summary: "New claim — pending initial AI assessment and document upload.",
+        riskIndicators: ["INFO: Awaiting initial document upload and AI scoring"],
+        recommendedAction: "Upload initial documentation to begin AI assessment.",
+        filingDate: dateStr,
+        lastUpdated: dateStr,
+      };
 
-    addCase(newCase);
-    setShowNewClaim(false);
-    setFormData({
-      claimantName: "",
-      policyNumber: "",
-      claimType: "Long-Term Care",
-      dateOfBirth: "",
-      diagnosis: "",
-      assignedTo: "",
-      assignedGroup: "Queue",
-    });
+      await addCase(newCase);
+      setShowNewClaim(false);
+      setFormData({
+        claimantName: "",
+        policyNumber: "",
+        claimType: "Long-Term Care",
+        dateOfBirth: "",
+        diagnosis: "",
+        assignedTo: "",
+        assignedGroup: "Queue",
+      });
+      router.push(`/case/${newCase.id}`);
+    } catch (err) {
+      console.error("[NewClaim] Could not save the claim:", err);
+      setCreateError(err instanceof Error ? err.message : (err as { message?: string })?.message || String(err));
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -262,6 +277,11 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+              {createError && (
+                <div className="mx-6 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 break-words">
+                  Could not create the claim: {createError}
+                </div>
+              )}
               <div className="px-6 py-4 border-t border-acme-border flex items-center justify-end gap-3">
                 <button
                   onClick={() => setShowNewClaim(false)}
@@ -271,10 +291,10 @@ export default function HomePage() {
                 </button>
                 <button
                   onClick={handleCreateClaim}
-                  disabled={!formData.claimantName || !formData.policyNumber}
+                  disabled={!formData.claimantName || !formData.policyNumber || isCreating}
                   className="px-4 py-2 rounded-lg bg-acme-orange text-white text-sm font-medium hover:bg-acme-orange/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create Claim
+                  {isCreating ? "Creating..." : "Create Claim"}
                 </button>
               </div>
             </motion.div>

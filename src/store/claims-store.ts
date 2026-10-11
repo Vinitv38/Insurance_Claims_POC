@@ -157,7 +157,7 @@ interface ClaimsState {
   setActiveDocument: (id: string | null) => void;
   setHighlightedCitation: (citation: string | null) => void;
   resetDropPhase: () => void;
-  addCase: (newCase: ClaimCase) => void;
+  addCase: (newCase: ClaimCase) => Promise<void>;
 }
 
 /* ===== HARGROVE DOCUMENTS ===== */
@@ -473,12 +473,10 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
     }
   },
 
-  addCase: (newCase) => {
+  addCase: async (newCase) => {
+    await insertClaim(newCase);
     set((state) => ({
       cases: [newCase, ...state.cases],
     }));
-    insertClaim(newCase).catch((err) =>
-      console.warn("[ClaimsStore] Failed to sync new claim to Supabase:", err)
-    );
   },
 }));

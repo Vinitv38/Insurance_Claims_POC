@@ -15,6 +15,8 @@ const statusConfig: Record<string, { label: string; classes: string }> = {
   pending: { label: "Pending", classes: "bg-blue-50 text-blue-700 border-blue-200" },
   processed: { label: "Processed", classes: "bg-green-50 text-green-700 border-green-200" },
   flagged: { label: "Flagged", classes: "bg-red-50 text-red-700 border-red-200" },
+  processing: { label: "Processing", classes: "bg-blue-50 text-blue-700 border-blue-200" },
+  failed: { label: "Failed", classes: "bg-red-100 text-red-800 border-red-300" },
 };
 
 export default function StatusBadge({ status, className }: StatusBadgeProps) {
