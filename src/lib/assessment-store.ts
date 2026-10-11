@@ -5,10 +5,15 @@ function assessmentRowId(executionId: string) {
   return `live-${executionId}`;
 }
 
+export type WorkflowMode = "new" | "delta";
+
+const WORKFLOW_NAME: Record<WorkflowMode, string> = { new: "LTC New", delta: "Delta" };
+
 export async function saveLiveAssessment(
   claimId: string,
   executionId: string,
-  parsed: ParsedAssessment
+  parsed: ParsedAssessment,
+  mode: WorkflowMode = "new"
 ): Promise<string> {
   const id = assessmentRowId(executionId);
 
@@ -23,6 +28,8 @@ export async function saveLiveAssessment(
   const docs = await supabase.from("documents").select("id", { count: "exact", head: true }).eq("claim_id", claimId);
   if (docs.error) throw docs.error;
 
+  const newDocs = mode === "delta" ? await documentsSinceLastAssessment(claimId) : [];
+
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
   const aiOutputMd = parsed.scoringManifestMd
@@ -32,9 +39,12 @@ export async function saveLiveAssessment(
   const insert = await supabase.from("assessments").insert({
     id,
     claim_id: claimId,
-    label: "Live AI Assessment",
+    label: mode === "delta" ? "Delta Review" : "Live AI Assessment",
     assessment_date: today,
-    trigger: "Initial Intake (LTC New workflow)",
+    trigger:
+      mode === "delta"
+        ? `New documents: ${newDocs.map((d) => d.name).join(", ") || "none"} (Delta workflow)`
+        : "Initial Intake (LTC New workflow)",
     complexity_score: parsed.complexityScore,
     vector_clinical: parsed.vectors.clinical,
     vector_documentation: parsed.vectors.documentation,
@@ -83,8 +93,8 @@ export async function saveLiveAssessment(
   const audit = await supabase.from("audit_history").insert({
     claim_id: claimId,
     timestamp: now.toISOString(),
-    action: "AI Assessment Completed",
-    detail: `LTC New workflow (execution ${executionId}): ${parsed.recommendation}, score ${parsed.complexityScore}, routed to ${parsed.assignedTo} (${parsed.assignedGroup}). Tags: ${parsed.tags.clinical} / ${parsed.tags.documentation} / ${parsed.tags.discrepancy} / ${parsed.tags.behavioral}.`,
+    action: mode === "delta" ? "Delta Review Completed" : "AI Assessment Completed",
+    detail: `${WORKFLOW_NAME[mode]} workflow (execution ${executionId}): score ${previousScore} → ${parsed.complexityScore}, ${parsed.recommendation}, routed to ${parsed.assignedTo} (${parsed.assignedGroup}). Tags: ${parsed.tags.clinical} / ${parsed.tags.documentation} / ${parsed.tags.discrepancy} / ${parsed.tags.behavioral}.`,
     user_name: "Agentic Studio",
     score_change_from: previousScore,
     score_change_to: parsed.complexityScore,
@@ -92,4 +102,28 @@ export async function saveLiveAssessment(
   if (audit.error) throw audit.error;
 
   return id;
+}
+
+// Documents uploaded after the claim's latest assessment, i.e. what the Delta workflow has to review.
+export async function documentsSinceLastAssessment(
+  claimId: string
+): Promise<{ id: string; name: string; status: string; flag_reason: string | null }[]> {
+  const latest = await supabase
+    .from("assessments")
+    .select("id, created_at")
+    .eq("claim_id", claimId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (latest.error) throw latest.error;
+  if (!latest.data) throw new Error(`Claim ${claimId} has no assessment yet, so there is no baseline for a delta review`);
+
+  const docs = await supabase
+    .from("documents")
+    .select("id, name, status, flag_reason, created_at")
+    .eq("claim_id", claimId)
+    .gt("created_at", latest.data.created_at)
+    .order("created_at", { ascending: true });
+  if (docs.error) throw docs.error;
+  return docs.data || [];
 }

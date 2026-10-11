@@ -647,6 +647,7 @@ export default function CaseDetailPage() {
       return "ok";
     };
     const assessmentScore = activeAssessment?.complexityScore ?? caseData.complexityScore;
+    const isDelta = !!activeAssessment?.trigger.includes("Delta workflow");
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
@@ -710,7 +711,7 @@ export default function CaseDetailPage() {
                 <div className={cn("rounded-lg border-l-4 p-3 bg-white border border-acme-border/60",
                   { low: "border-l-green-500", moderate: "border-l-amber-500", high: "border-l-acme-orange", critical: "border-l-red-500" }[scoreBand(assessmentScore)]
                 )}>
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">Primary Score Driver</span>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">{isDelta ? "Delta Alert" : "Primary Score Driver"}</span>
                   <CitedText text={activeAssessment.scoreDriver} {...citeProps} className="font-medium text-gray-800" />
                 </div>
               )}
@@ -719,7 +720,7 @@ export default function CaseDetailPage() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Stethoscope className="w-4 h-4 text-acme-orange" />
-                  <h3 className="text-xs font-bold text-acme-orange uppercase tracking-wider">Clinical Synopsis</h3>
+                  <h3 className="text-xs font-bold text-acme-orange uppercase tracking-wider">{isDelta ? "What the New Documents Change" : "Clinical Synopsis"}</h3>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50">
                   {summaryText && <CitedText text={summaryText} {...citeProps} />}
@@ -765,7 +766,7 @@ export default function CaseDetailPage() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle className="w-4 h-4 text-red-500" />
-                  <h3 className="text-xs font-bold text-red-600 uppercase tracking-wider">Critical Alerts & Discrepancies</h3>
+                  <h3 className="text-xs font-bold text-red-600 uppercase tracking-wider">{isDelta ? "Resolved Gaps & New Risks" : "Critical Alerts & Discrepancies"}</h3>
                 </div>
                 <div className="space-y-2.5">
                   {riskIndicators?.map((indicator, i) => {
@@ -791,7 +792,7 @@ export default function CaseDetailPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <FileSearch className="w-4 h-4 text-acme-teal" />
-                    <h3 className="text-xs font-bold text-acme-teal uppercase tracking-wider">Clinical & Functional Profile</h3>
+                    <h3 className="text-xs font-bold text-acme-teal uppercase tracking-wider">{isDelta ? "Updated Clinical & Functional Profile" : "Clinical & Functional Profile"}</h3>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4 border border-acme-border/50 prose prose-sm max-w-none
                     prose-headings:text-xs prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wider prose-headings:text-acme-teal prose-headings:mt-4 prose-headings:mb-2 first:prose-headings:mt-0
@@ -823,7 +824,7 @@ export default function CaseDetailPage() {
               {/* Routing Rationale */}
               {activeAssessment?.routingRationale && (
                 <div className="bg-gray-50 rounded-lg p-3 border border-acme-border/50">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">Routing Rationale</span>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">{isDelta ? "Routing Adjustment" : "Routing Rationale"}</span>
                   <CitedText text={activeAssessment.routingRationale} {...citeProps} className="text-xs text-gray-600" />
                 </div>
               )}
@@ -955,9 +956,9 @@ export default function CaseDetailPage() {
             assessmentRun.phase === "done" ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
             <Loader2 className="w-4 h-4 mt-0.5 flex-shrink-0 animate-spin" />}
           <div className="flex-1 min-w-0">
-            {assessmentRun.phase === "starting" && <p>Starting the LTC New workflow in Agentic Studio for {caseData.id}...</p>}
+            {assessmentRun.phase === "starting" && <p>Starting the {assessmentRun.mode === "delta" ? "Delta" : "LTC New"} workflow in Agentic Studio for {caseData.id}...</p>}
             {assessmentRun.phase === "running" && (
-              <p>AI agents are assessing the claim (intake, clinical, policy &amp; risk, scoring, routing, briefing) — {Math.round((Date.now() - assessmentRun.startedAt) / 1000)}s elapsed. Execution {assessmentRun.executionId}</p>
+              <p>{assessmentRun.mode === "delta" ? "AI agents are reviewing the new documents against the last assessment (intake, clinical, policy & risk, rescoring, routing, delta briefing)" : "AI agents are assessing the claim (intake, clinical, policy & risk, scoring, routing, briefing)"} — {Math.round((Date.now() - assessmentRun.startedAt) / 1000)}s elapsed. Execution {assessmentRun.executionId}</p>
             )}
             {assessmentRun.phase === "done" && <p>Assessment saved: {assessmentRun.summary}</p>}
             {assessmentRun.phase === "error" && <p className="break-words">AI assessment failed: {assessmentRun.message}</p>}
@@ -987,10 +988,10 @@ export default function CaseDetailPage() {
             {uploadJob.phase === "done" && (
               <p>
                 {uploadJob.total} document(s) processed.{" "}
-                {uploadJob.autoStarted
+                {uploadJob.autoStarted === "new"
                   ? "All documents are ready, so the LTC New assessment was started automatically."
-                  : caseData.assessments.length > 0
-                    ? "This claim already has an assessment, so it was not re-run automatically."
+                  : uploadJob.autoStarted === "delta"
+                    ? "The claim already has an assessment, so the Delta review of the new documents was started automatically."
                     : "Some documents are not processed yet, so the assessment was not started."}
               </p>
             )}

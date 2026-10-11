@@ -9,7 +9,7 @@ import { insertDocument, uploadDocumentFile } from "@/lib/supabase-api";
 export type UploadJob =
   | { phase: "uploading"; total: number }
   | { phase: "processing"; total: number; done: number }
-  | { phase: "done"; total: number; autoStarted: boolean }
+  | { phase: "done"; total: number; autoStarted: "new" | "delta" | null }
   | { phase: "error"; message: string };
 
 interface DocumentUploadsState {
@@ -42,6 +42,8 @@ export const useDocumentUploads = create<DocumentUploadsState>((set, get) => {
       }
       const total = files.length;
       const claims = useClaimsStore.getState();
+      // Documents added after an assessment belong to the next review day.
+      const day = (claims.cases.find((c) => c.id === claimId)?.assessments.length || 0) + 1;
       try {
         setJob(claimId, { phase: "uploading", total });
         const uploaded: Document[] = [];
@@ -51,7 +53,7 @@ export const useDocumentUploads = create<DocumentUploadsState>((set, get) => {
             id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             name: file.name,
             type: "other",
-            day: 1,
+            day,
             status: "pending",
             vectorAffected: "documentation",
             filePath,
@@ -83,11 +85,16 @@ export const useDocumentUploads = create<DocumentUploadsState>((set, get) => {
         }
 
         const claim = useClaimsStore.getState().cases.find((c) => c.id === claimId);
-        const ready =
-          !!claim && claim.documents.length > 0 && claim.documents.every((d) => d.status === "processed");
-        const autoStart = ready && claim!.assessments.length === 0;
-        if (autoStart) void useAssessmentRuns.getState().startRun(claimId);
-        setJob(claimId, { phase: "done", total, autoStarted: autoStart });
+        if (!claim) throw new Error(`Claim ${claimId} could not be reloaded after processing`);
+        // New claim: LTC New once every document is processed. Assessed claim: Delta review of the new documents.
+        const mode =
+          claim.assessments.length > 0
+            ? ("delta" as const)
+            : claim.documents.every((d) => d.status === "processed")
+              ? ("new" as const)
+              : null;
+        if (mode) void useAssessmentRuns.getState().startRun(claimId, mode);
+        setJob(claimId, { phase: "done", total, autoStarted: mode });
       } catch (err) {
         console.error("[Documents] Upload failed:", err);
         await claims.refreshCase(claimId).catch(() => undefined);

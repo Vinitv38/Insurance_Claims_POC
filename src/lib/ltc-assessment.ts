@@ -94,6 +94,18 @@ const SECTION_HEADERS = [
   "CRITICAL ALERTS & DISCREPANCIES",
   "CLINICAL & FUNCTIONAL PROFILE",
   "TARGETED NEXT STEPS FOR ADJUSTER",
+  // Delta workflow ("LTC Continuous Claim Assessment & Delta Investigation")
+  "EXECUTIVE DELTA BRIEFING",
+  "EXECUTIVE DELTA ALERT & ROUTING",
+  "DELTA INVESTIGATION SYNOPSIS",
+  "RESOLVED GAPS & NEW RISKS",
+  "UPDATED CLINICAL AND FUNCTIONAL PROFILE",
+  "RECALCULATED SCORING MANIFEST",
+  "REVISED RISK TAGS",
+  "SCORING REVISION DETAILS",
+  "DYNAMIC ROUTING DIRECTIVE",
+  "ROUTING IMPACT ANALYSIS",
+  "ASSIGNMENT EXECUTION",
 ];
 
 function isHeader(line: string): string | undefined {
@@ -134,6 +146,112 @@ function findNodeText(nodes: ExecutionNode[], marker: RegExp): string | undefine
   return undefined;
 }
 
+function parseEntity(entity: string, context = "") {
+  const [who, queuePart] = entity.split(/\|\s*Queue\s*:/i);
+  const haystack = `${entity} ${context}`.toLowerCase();
+  const assignedGroup = ROUTING_TIERS.find((t) => haystack.includes(t.toLowerCase())) || (queuePart || "").trim();
+  const assignedTo = who
+    .replace(/\(.*?\)/g, "")
+    .replace(/\bEMP-\d+\b/gi, "")
+    .split(/\s+[—–-]\s+/)[0]
+    .replace(/^[\s/|,]+|[\s/|,]+$/g, "")
+    .trim();
+  if (!assignedTo || !assignedGroup) {
+    throw new Error(`Could not read assignee and queue from "${entity}"`);
+  }
+  return { assignedTo, assignedGroup };
+}
+
+function readTags(source: string) {
+  const tags = {} as ParsedAssessment["tags"];
+  const vectors = {} as ParsedAssessment["vectors"];
+  for (const vector of Object.keys(TAG_VALUES) as (keyof typeof TAG_VALUES)[]) {
+    const tag = findTag(source, vector);
+    if (!tag) throw new Error(`Could not read a valid ${vector} tag from the workflow output`);
+    tags[vector] = tag;
+    vectors[vector] = Math.round(TAG_VALUES[vector][tag] * 100);
+  }
+  return { tags, vectors };
+}
+
+function readScore(text: string | undefined, what: string): number {
+  const m = text?.match(/\d{1,3}/);
+  const score = m ? Number(m[0]) : NaN;
+  if (!Number.isInteger(score) || score < 0 || score > 100) {
+    throw new Error(`${what} is not a valid 0-100 score (got "${text || "nothing"}")`);
+  }
+  return score;
+}
+
+// Delta workflow output: the Executive Delta Briefing, plus the Recalculated Scoring Manifest and Dynamic
+// Routing Directive from the scoring agent. If the run also produced a full Executive Adjudication Briefing,
+// it is used for the fields the delta template doesn't have (policy status, recommendation).
+export function parseLtcDeltaOutput(nodes: ExecutionNode[]): ParsedAssessment {
+  const deltaNode = findNodeText(nodes, /EXECUTIVE DELTA BRIEFING/i);
+  if (!deltaNode) {
+    throw new Error(
+      `Workflow output has no Executive Delta Briefing. Nodes received: ${nodes.map((n) => n.name).join(", ") || "none"}`
+    );
+  }
+  const briefingMd = deltaNode.slice(deltaNode.search(/\**\s*EXECUTIVE DELTA BRIEFING/i));
+  const lines = briefingMd.split("\n");
+  const full = findNodeText(nodes, /EXECUTIVE ADJUDICATION BRIEFING/i) ? parseLtcNewOutput(nodes) : undefined;
+
+  const manifest = findNodeText(nodes, /RECALCULATED SCORING MANIFEST/i);
+  const routing = findNodeText(nodes, /DYNAMIC ROUTING DIRECTIVE/i);
+  const manifestLines = manifest?.split("\n") || [];
+  const routingLines = routing?.split("\n") || [];
+
+  const recText = (field(lines, "System Recommendation") || "").toUpperCase();
+  const recommendation = RECOMMENDATIONS.find((r) => recText.includes(r)) || full?.recommendation;
+  if (!recommendation) {
+    throw new Error(
+      'Delta briefing has no System Recommendation. Add "-- System Recommendation: [APPROVE CLAIM | ESCALATE | REJECT | PENDING FOR INFORMATION]" to the Executive Delta Briefing template.'
+    );
+  }
+
+  const complexityScore = readScore(
+    field(lines, "Recalculated Score") || field(manifestLines, "Recalculated Complexity Score"),
+    "Recalculated Score"
+  );
+
+  const entity = field(routingLines, "Final Assigned Entity");
+  const { assignedTo, assignedGroup } = entity
+    ? parseEntity(entity, field(routingLines, "Required Skillset") || "")
+    : full
+      ? { assignedTo: full.assignedTo, assignedGroup: full.assignedGroup }
+      : (() => {
+          throw new Error("Delta output has no Final Assigned Entity (Dynamic Routing Directive)");
+        })();
+
+  const revisedTags = section(manifestLines, "REVISED RISK TAGS").join("\n");
+  const { tags, vectors } = !revisedTags && full ? full : readTags(revisedTags);
+
+  const nextSteps = section(lines, "TARGETED NEXT STEPS FOR ADJUSTER").map(clean).filter(Boolean);
+  const clinical = section(lines, "UPDATED CLINICAL AND FUNCTIONAL PROFILE");
+  const routingParts = [field(lines, "Routing Adjustment"), field(routingLines, "Routing Justification")].filter(Boolean);
+
+  return {
+    recommendation,
+    complexityScore,
+    scoreDriver: field(lines, "System Alert"),
+    assignedTo,
+    assignedGroup,
+    routingRationale: routingParts.length ? routingParts.map((p) => p!.replace(/[.\s]+$/, "")).join(". ") + "." : undefined,
+    summary: field(lines, "Supplemental Evidence Summary"),
+    contractStatus: full?.contractStatus,
+    eliminationPeriod: full?.eliminationPeriod,
+    exclusions: full?.exclusions,
+    tags,
+    vectors,
+    riskIndicators: section(lines, "RESOLVED GAPS & NEW RISKS").map(clean).filter(Boolean),
+    recommendedAction: nextSteps.length ? nextSteps.join(" ") : undefined,
+    clinicalProfileMd: clinical.length ? clinical.join("\n") : undefined,
+    briefingMd,
+    scoringManifestMd: [manifest, routing].filter(Boolean).join("\n\n---\n\n") || undefined,
+  };
+}
+
 export function parseLtcNewOutput(nodes: ExecutionNode[]): ParsedAssessment {
   const briefingMd = findNodeText(nodes, /EXECUTIVE ADJUDICATION BRIEFING/i);
   if (!briefingMd) {
@@ -150,38 +268,16 @@ export function parseLtcNewOutput(nodes: ExecutionNode[]): ParsedAssessment {
     throw new Error(`Briefing has no valid System Recommendation (got "${recText || "nothing"}")`);
   }
 
-  const scoreText =
+  const complexityScore = readScore(
     field(lines, "Final Complexity Score") ||
-    (scoringManifestMd ? field(scoringManifestMd.split("\n"), "Calculated Complexity Score") : undefined);
-  const scoreMatch = scoreText?.match(/\d{1,3}/);
-  const complexityScore = scoreMatch ? Number(scoreMatch[0]) : NaN;
-  if (!Number.isInteger(complexityScore) || complexityScore < 0 || complexityScore > 100) {
-    throw new Error(`Briefing has no valid Final Complexity Score (got "${scoreText || "nothing"}")`);
-  }
+      (scoringManifestMd ? field(scoringManifestMd.split("\n"), "Calculated Complexity Score") : undefined),
+    "Final Complexity Score"
+  );
 
   const entity = field(lines, "Assigned Entity");
   if (!entity) throw new Error("Briefing has no Assigned Entity");
-  const [who, queuePart] = entity.split(/\|\s*Queue\s*:/i);
-  const assignedGroup = ROUTING_TIERS.find((t) => entity.toLowerCase().includes(t.toLowerCase())) || (queuePart || "").trim();
-  const assignedTo = who
-    .replace(/\(.*?\)/g, "")
-    .replace(/\bEMP-\d+\b/gi, "")
-    .split(/\s+[—–-]\s+/)[0]
-    .replace(/^[\s/|,]+|[\s/|,]+$/g, "")
-    .trim();
-  if (!assignedTo || !assignedGroup) {
-    throw new Error(`Could not read assignee and queue from Assigned Entity "${entity}"`);
-  }
-
-  const tagSource = section(lines, "COMPLEXITY VECTORS & TAGS").join("\n") + "\n" + (scoringManifestMd || "");
-  const tags = {} as ParsedAssessment["tags"];
-  const vectors = {} as ParsedAssessment["vectors"];
-  for (const vector of Object.keys(TAG_VALUES) as (keyof typeof TAG_VALUES)[]) {
-    const tag = findTag(tagSource, vector);
-    if (!tag) throw new Error(`Could not read a valid ${vector} tag from the workflow output`);
-    tags[vector] = tag;
-    vectors[vector] = Math.round(TAG_VALUES[vector][tag] * 100);
-  }
+  const { assignedTo, assignedGroup } = parseEntity(entity);
+  const { tags, vectors } = readTags(section(lines, "COMPLEXITY VECTORS & TAGS").join("\n") + "\n" + (scoringManifestMd || ""));
 
   const nextSteps = section(lines, "TARGETED NEXT STEPS FOR ADJUSTER").map(clean).filter(Boolean);
   const clinical = section(lines, "CLINICAL & FUNCTIONAL PROFILE");
