@@ -981,7 +981,7 @@ export default function CaseDetailPage() {
             uploadJob.phase === "done" ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
             <Loader2 className="w-4 h-4 mt-0.5 flex-shrink-0 animate-spin" />}
           <div className="flex-1 min-w-0">
-            {uploadJob.phase === "uploading" && <p>Uploading {uploadJob.total} document(s) to Supabase Storage...</p>}
+            {uploadJob.phase === "uploading" && <p>Uploading {uploadJob.total} document(s)...</p>}
             {uploadJob.phase === "processing" && (
               <p>Reading documents with Azure Document Intelligence — {uploadJob.done} of {uploadJob.total} done.</p>
             )}
