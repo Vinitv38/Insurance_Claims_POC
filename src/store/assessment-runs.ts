@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import { useClaimsStore } from "./claims-store";
 
 export type WorkflowMode = "new" | "delta";
@@ -39,6 +40,24 @@ function writePending(claimId: string, run: PendingRun | null) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
 }
 
+// Toasts carry only business-level text; technical details stay in the console.
+function notifyRun(claimId: string, run: AssessmentRun) {
+  const id = `assessment-${claimId}`;
+  const ref = claimId.toUpperCase();
+  const label = run.mode === "delta" ? "AI review of new documents" : "AI assessment";
+  if (run.phase === "starting" || run.phase === "running") {
+    toast.loading(`${label} in progress`, { id, description: `${ref} · This can take a few minutes.` });
+  } else if (run.phase === "done") {
+    toast.success(`${label} complete`, { id, description: `${ref} · ${run.summary}`, duration: 8000 });
+  } else {
+    toast.error(`${label} could not be completed`, {
+      id,
+      description: `${ref} · Nothing was saved. Please try again.`,
+      duration: 10000,
+    });
+  }
+}
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface AssessmentRunsState {
@@ -49,8 +68,10 @@ interface AssessmentRunsState {
 }
 
 export const useAssessmentRuns = create<AssessmentRunsState>((set, get) => {
-  const setRun = (claimId: string, run: AssessmentRun) =>
+  const setRun = (claimId: string, run: AssessmentRun) => {
     set((state) => ({ runs: { ...state.runs, [claimId]: run } }));
+    notifyRun(claimId, run);
+  };
 
   async function poll(claimId: string, pending: PendingRun) {
     if (activeLoops.has(claimId)) return;
@@ -73,7 +94,7 @@ export const useAssessmentRuns = create<AssessmentRunsState>((set, get) => {
             phase: "done",
             mode,
             assessmentId: status.assessmentId,
-            summary: `${status.recommendation} — score ${status.complexityScore}, routed to ${status.assignedTo} (${status.assignedGroup})`,
+            summary: `${status.recommendation} · score ${status.complexityScore} · ${status.assignedTo} (${status.assignedGroup})`,
           });
           return;
         }

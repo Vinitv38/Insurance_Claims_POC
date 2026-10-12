@@ -75,7 +75,6 @@ export default function CaseDetailPage() {
   const [docViewTab, setDocViewTab] = useState<DocViewTab>("original");
   const [imageZoom, setImageZoom] = useState(100);
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [docModalTab, setDocModalTab] = useState<DocViewTab>("original");
   const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(null);
@@ -84,12 +83,9 @@ export default function CaseDetailPage() {
   const assessmentRun = useAssessmentRuns((s) => s.runs[caseId]);
   const startRun = useAssessmentRuns((s) => s.startRun);
   const resumeRuns = useAssessmentRuns((s) => s.resumeRuns);
-  const dismissRun = useAssessmentRuns((s) => s.dismiss);
   const uploadJob = useDocumentUploads((s) => s.jobs[caseId]);
   const uploadDocuments = useDocumentUploads((s) => s.uploadDocuments);
-  const dismissUpload = useDocumentUploads((s) => s.dismiss);
   const isUploading = uploadJob?.phase === "uploading" || uploadJob?.phase === "processing";
-  const [, setClockTick] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentCase = cases.find((c) => c.id === caseId);
   const isAssessing = assessmentRun?.phase === "starting" || assessmentRun?.phase === "running";
@@ -99,11 +95,6 @@ export default function CaseDetailPage() {
     resumeRuns();
   }, [resumeRuns]);
 
-  useEffect(() => {
-    if (!isAssessing) return;
-    const timer = setInterval(() => setClockTick((t) => t + 1), 1000);
-    return () => clearInterval(timer);
-  }, [isAssessing]);
 
   useEffect(() => {
     if (!completedAssessmentId) return;
@@ -135,13 +126,6 @@ export default function CaseDetailPage() {
     }
   }, [currentCase, activeDocumentId, fetchedFileContent]);
 
-  // Auto-hide toast after 4 seconds
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => setToastMessage(null), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
 
   if (!currentCase) {
     if (isLoading || !isInitialized) {
@@ -946,65 +930,6 @@ export default function CaseDetailPage() {
         </button>
       </div>
 
-      {assessmentRun && (
-        <div className={cn("flex items-start gap-2 rounded-lg border px-4 py-3 text-sm",
-          assessmentRun.phase === "error" ? "bg-red-50 border-red-200 text-red-700" :
-          assessmentRun.phase === "done" ? "bg-green-50 border-green-200 text-green-700" :
-          "bg-blue-50 border-blue-200 text-blue-700"
-        )}>
-          {assessmentRun.phase === "error" ? <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
-            assessmentRun.phase === "done" ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
-            <Loader2 className="w-4 h-4 mt-0.5 flex-shrink-0 animate-spin" />}
-          <div className="flex-1 min-w-0">
-            {assessmentRun.phase === "starting" && <p>Starting the {assessmentRun.mode === "delta" ? "Delta" : "LTC New"} workflow in Agentic Studio for {caseData.id}...</p>}
-            {assessmentRun.phase === "running" && (
-              <p>{assessmentRun.mode === "delta" ? "AI agents are reviewing the new documents against the last assessment (intake, clinical, policy & risk, rescoring, routing, delta briefing)" : "AI agents are assessing the claim (intake, clinical, policy & risk, scoring, routing, briefing)"} — {Math.round((Date.now() - assessmentRun.startedAt) / 1000)}s elapsed. Execution {assessmentRun.executionId}</p>
-            )}
-            {assessmentRun.phase === "done" && <p>Assessment saved: {assessmentRun.summary}</p>}
-            {assessmentRun.phase === "error" && <p className="break-words">AI assessment failed: {assessmentRun.message}</p>}
-          </div>
-          {(assessmentRun.phase === "done" || assessmentRun.phase === "error") && (
-            <button onClick={() => dismissRun(caseData.id)} className="p-0.5 rounded hover:bg-black/5">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {uploadJob && (
-        <div className={cn("flex items-start gap-2 rounded-lg border px-4 py-3 text-sm",
-          uploadJob.phase === "error" ? "bg-red-50 border-red-200 text-red-700" :
-          uploadJob.phase === "done" ? "bg-green-50 border-green-200 text-green-700" :
-          "bg-blue-50 border-blue-200 text-blue-700"
-        )}>
-          {uploadJob.phase === "error" ? <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
-            uploadJob.phase === "done" ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" /> :
-            <Loader2 className="w-4 h-4 mt-0.5 flex-shrink-0 animate-spin" />}
-          <div className="flex-1 min-w-0">
-            {uploadJob.phase === "uploading" && <p>Uploading {uploadJob.total} document(s)...</p>}
-            {uploadJob.phase === "processing" && (
-              <p>Reading documents with Azure Document Intelligence — {uploadJob.done} of {uploadJob.total} done.</p>
-            )}
-            {uploadJob.phase === "done" && (
-              <p>
-                {uploadJob.total} document(s) processed.{" "}
-                {uploadJob.autoStarted === "new"
-                  ? "All documents are ready, so the LTC New assessment was started automatically."
-                  : uploadJob.autoStarted === "delta"
-                    ? "The claim already has an assessment, so the Delta review of the new documents was started automatically."
-                    : "Some documents are not processed yet, so the assessment was not started."}
-              </p>
-            )}
-            {uploadJob.phase === "error" && <p className="break-words">Document upload failed: {uploadJob.message}</p>}
-          </div>
-          {(uploadJob.phase === "done" || uploadJob.phase === "error") && (
-            <button onClick={() => dismissUpload(caseData.id)} className="p-0.5 rounded hover:bg-black/5">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      )}
-
       {/* Main Tab Switcher */}
       <div className="flex items-center gap-1 border-b border-acme-border overflow-x-auto">
         <button
@@ -1379,23 +1304,6 @@ export default function CaseDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* In-app Toast Notification */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl bg-acme-teal text-white shadow-lg max-w-sm"
-          >
-            <CheckCircle2 className="w-5 h-5 text-green-300 flex-shrink-0" />
-            <p className="text-sm font-medium">{toastMessage}</p>
-            <button onClick={() => setToastMessage(null)} className="ml-2 p-0.5 rounded hover:bg-white/20 transition-colors flex-shrink-0">
-              <X className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

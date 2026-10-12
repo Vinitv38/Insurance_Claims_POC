@@ -7,7 +7,7 @@ function assessmentRowId(executionId: string) {
 
 export type WorkflowMode = "new" | "delta";
 
-const WORKFLOW_NAME: Record<WorkflowMode, string> = { new: "LTC New", delta: "Delta" };
+const WORKFLOW_NAME: Record<WorkflowMode, string> = { new: "AI assessment", delta: "AI review of new documents" };
 
 export async function saveLiveAssessment(
   claimId: string,
@@ -94,8 +94,8 @@ export async function saveLiveAssessment(
     claim_id: claimId,
     timestamp: now.toISOString(),
     action: mode === "delta" ? "Delta Review Completed" : "AI Assessment Completed",
-    detail: `${WORKFLOW_NAME[mode]} workflow (execution ${executionId}): score ${previousScore} → ${parsed.complexityScore}, ${parsed.recommendation}, routed to ${parsed.assignedTo} (${parsed.assignedGroup}). Tags: ${parsed.tags.clinical} / ${parsed.tags.documentation} / ${parsed.tags.discrepancy} / ${parsed.tags.behavioral}.`,
-    user_name: "Agentic Studio",
+    detail: `${WORKFLOW_NAME[mode]}: score ${previousScore} → ${parsed.complexityScore}, ${parsed.recommendation}, routed to ${parsed.assignedTo} (${parsed.assignedGroup}).`,
+    user_name: "AI Assessment",
     score_change_from: previousScore,
     score_change_to: parsed.complexityScore,
   });
