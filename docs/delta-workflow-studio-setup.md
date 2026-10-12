@@ -23,9 +23,9 @@ The new documents are the ones uploaded after the claim's latest assessment. All
 ## HTTP request nodes to change in Studio
 
 1. **Baseline (replaces the 2 mocked "Executive Adjudication Briefing" responses)**: GET, mock off
-   `https://avqdgblhhijgrphkzphq.supabase.co/rest/v1/claims?id=eq.{claim_id}&select=id,claimant_name,policy_number,status,complexity_score,assigned_to,assigned_group,assessments(label,assessment_date,complexity_score,system_recommendation,vector_clinical_label,vector_documentation_label,vector_discrepancy_label,vector_behavioral_label,ai_output_md)&assessments.order=created_at.desc&assessments.limit=1&apikey=sb_publishable_rz204oyB4hMPE4-ik4-vNg_FGctUY2E`
+   `https://avqdgblhhijgrphkzphq.supabase.co/rest/v1/claims?id=eq.{claim_id}&select=id,claimant_name,policy_number,status,complexity_score,assigned_to,assigned_group,assessments(label,assessment_date,complexity_score,system_recommendation,vector_clinical_label,vector_documentation_label,vector_discrepancy_label,vector_behavioral_label,ai_output_md)&assessments.order=created_at.desc&assessments.limit=1&apikey=<same key as LTC New Doc request>`
 2. **New documents (replaces the mocked Genesys transcript)**: GET, mock off
-   `https://avqdgblhhijgrphkzphq.supabase.co/rest/v1/documents?claim_id=eq.{claim_id}&id=in.({new_document_ids})&select=name,type,status,ai_interpreted_md&apikey=sb_publishable_rz204oyB4hMPE4-ik4-vNg_FGctUY2E`
+   `https://avqdgblhhijgrphkzphq.supabase.co/rest/v1/documents?claim_id=eq.{claim_id}&id=in.({new_document_ids})&select=name,type,status,ai_interpreted_md&apikey=<same key as LTC New Doc request>`
 3. **Document search**: replace it with the same "Doc request" HTTP node as in LTC New (all of the claim's documents).
 
 ## Output the app reads
