@@ -77,7 +77,7 @@ export default function Sidebar() {
           <Shield className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-base font-bold text-white tracking-tight">Illumifin Insurance</h1>
+          <h1 className="text-base font-bold text-white tracking-tight">ACME Insurance</h1>
           <p className="text-[10px] text-white/50 font-medium tracking-widest uppercase">Claims AI Engine</p>
         </div>
       </div>
