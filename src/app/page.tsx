@@ -4,10 +4,11 @@ import MetricCard from "@/components/ui/MetricCard";
 import CasesTable from "@/components/dashboard/CasesTable";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import { useClaimsStore } from "@/store/claims-store";
-import { Activity, Zap, AlertTriangle, CheckCircle2, Clock, TrendingUp, FileStack, Users, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { Activity, Zap, AlertTriangle, CheckCircle2, Clock, TrendingUp, FileStack, Users, Plus, X, Upload, FileText } from "lucide-react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { nextClaimId } from "@/lib/supabase-api";
+import { useDocumentUploads } from "@/store/document-uploads";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ClaimCase } from "@/store/claims-store";
 
@@ -18,14 +19,14 @@ export default function HomePage() {
   const [showNewClaim, setShowNewClaim] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const uploadDocuments = useDocumentUploads((s) => s.uploadDocuments);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newClaimFiles, setNewClaimFiles] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     claimantName: "",
     policyNumber: "",
     claimType: "Long-Term Care",
     dateOfBirth: "",
-    diagnosis: "",
-    assignedTo: "",
-    assignedGroup: "Queue",
   });
 
   const isLoading = useClaimsStore((s) => s.isLoading);
@@ -62,10 +63,10 @@ export default function HomePage() {
         claimType: formData.claimType,
         dateOfBirth: formData.dateOfBirth || "N/A",
         age,
-        diagnosis: formData.diagnosis || "Pending Assessment",
+        diagnosis: "Pending AI assessment",
         status: "pending",
-        assignedTo: formData.assignedTo || "Unassigned",
-        assignedGroup: formData.assignedGroup,
+        assignedTo: "Unassigned",
+        assignedGroup: "Unassigned",
         complexityScore: 0,
         vectors: { clinical: 0, documentation: 0, discrepancy: 0, behavioral: 0 },
         documents: [],
@@ -79,23 +80,26 @@ export default function HomePage() {
           },
         ],
         assessments: [],
-        summary: "New claim — pending initial AI assessment and document upload.",
+        summary: newClaimFiles.length
+          ? "New claim — documents uploaded; the AI assessment starts automatically once they are processed."
+          : "New claim — pending initial AI assessment and document upload.",
         riskIndicators: ["INFO: Awaiting initial document upload and AI scoring"],
-        recommendedAction: "Upload initial documentation to begin AI assessment.",
+        recommendedAction: newClaimFiles.length
+          ? "Wait for document processing and the automatic LTC New assessment."
+          : "Upload initial documentation to begin AI assessment.",
         filingDate: dateStr,
         lastUpdated: dateStr,
       };
 
       await addCase(newCase);
+      if (newClaimFiles.length) void uploadDocuments(newCase.id, newClaimFiles);
       setShowNewClaim(false);
+      setNewClaimFiles([]);
       setFormData({
         claimantName: "",
         policyNumber: "",
         claimType: "Long-Term Care",
         dateOfBirth: "",
-        diagnosis: "",
-        assignedTo: "",
-        assignedGroup: "Queue",
       });
       router.push(`/case/${newCase.id}`);
     } catch (err) {
@@ -243,38 +247,49 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Diagnosis</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Documents</label>
                   <input
-                    value={formData.diagnosis}
-                    onChange={(e) => setFormData((p) => ({ ...p, diagnosis: e.target.value }))}
-                    className="w-full bg-gray-50 border border-acme-border rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-acme-orange/50"
-                    placeholder="Primary diagnosis"
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    multiple
+                    onChange={(e) => {
+                      const picked = Array.from(e.target.files || []);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                      setNewClaimFiles((prev) => [...prev, ...picked.filter((f) => !prev.some((p) => p.name === f.name && p.size === f.size))]);
+                    }}
                   />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Assigned To</label>
-                    <input
-                      value={formData.assignedTo}
-                      onChange={(e) => setFormData((p) => ({ ...p, assignedTo: e.target.value }))}
-                      className="w-full bg-gray-50 border border-acme-border rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-acme-orange/50"
-                      placeholder="Adjuster name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Group</label>
-                    <select
-                      value={formData.assignedGroup}
-                      onChange={(e) => setFormData((p) => ({ ...p, assignedGroup: e.target.value }))}
-                      className="w-full bg-gray-50 border border-acme-border rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-acme-orange/50"
-                    >
-                      <option>Queue</option>
-                      <option>Junior Adjuster</option>
-                      <option>Senior Adjuster</option>
-                      <option>Tier 2 Clinical Investigator</option>
-                      <option>SIU Fraud Unit</option>
-                    </select>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 border border-dashed border-acme-border rounded-lg px-3 py-3 text-sm text-gray-500 bg-gray-50 hover:border-acme-orange/50 hover:text-gray-700 transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {newClaimFiles.length ? "Add more files" : "Attach claim documents"}
+                  </button>
+                  {newClaimFiles.length > 0 && (
+                    <ul className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                      {newClaimFiles.map((f) => (
+                        <li key={`${f.name}-${f.size}`} className="flex items-center justify-between gap-2 rounded-lg bg-gray-50 border border-acme-border px-2 py-1 text-xs text-gray-700">
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            <FileText className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                            <span className="truncate">{f.name}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setNewClaimFiles((prev) => prev.filter((p) => p !== f))}
+                            className="p-0.5 rounded hover:bg-gray-200"
+                            aria-label={`Remove ${f.name}`}
+                          >
+                            <X className="w-3 h-3 text-gray-400" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-1.5 text-[11px] text-gray-400">
+                    Diagnosis, score, adjuster and queue are set by the AI assessment, which starts automatically once all documents are processed.
+                  </p>
                 </div>
               </div>
               {createError && (
