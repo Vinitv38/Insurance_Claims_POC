@@ -44,6 +44,21 @@ const VECTOR_TAXONOMY: Record<string, TaxonomyEntry[]> = {
   ],
 };
 
+// Taxonomy weight of a tag; labels may use spaces or underscores. Null when the label is unknown.
+export function tagWeight(vector: keyof typeof VECTOR_TAXONOMY, label: string | undefined): number | null {
+  if (!label) return null;
+  const key = label.trim().toUpperCase().replace(/\s+/g, "_");
+  return VECTOR_TAXONOMY[vector]?.find((t) => t.label === key)?.score ?? null;
+}
+
+export function tagBadgeClass(vector: keyof typeof VECTOR_TAXONOMY, label: string): string {
+  const weight = tagWeight(vector, label);
+  if (weight === null) return "bg-gray-100 text-gray-600";
+  if (weight <= 0.2) return "bg-green-50 text-green-600";
+  if (weight <= 0.6) return "bg-amber-50 text-amber-600";
+  return "bg-red-50 text-red-600";
+}
+
 interface RiskThermometerProps {
   label: string;
   value: number;
@@ -51,10 +66,10 @@ interface RiskThermometerProps {
   color?: string;
 }
 
+// Same cut-offs as tagBadgeClass, so a bar and its tag badge share a colour.
 function getBarColor(value: number): string {
-  if (value <= 30) return "bg-green-500";
+  if (value <= 20) return "bg-green-500";
   if (value <= 60) return "bg-amber-500";
-  if (value <= 80) return "bg-acme-orange";
   return "bg-red-500";
 }
 
@@ -101,7 +116,7 @@ export default function RiskThermometer({ label, value, subscript }: RiskThermom
         </div>
         <span className={cn(
           "text-xs font-bold tabular-nums",
-          value <= 30 ? "text-green-600" : value <= 60 ? "text-amber-600" : value <= 80 ? "text-acme-orange" : "text-red-600"
+          value <= 20 ? "text-green-600" : value <= 60 ? "text-amber-600" : "text-red-600"
         )}>
           {value}%
         </span>
@@ -112,7 +127,7 @@ export default function RiskThermometer({ label, value, subscript }: RiskThermom
           initial={{ width: "0%" }}
           animate={{ width: `${value}%` }}
           transition={{ duration: 1.2, ease: "easeOut" }}
-          style={{ boxShadow: value > 60 ? `0 0 10px ${value > 80 ? "rgba(239,68,68,0.4)" : "rgba(232,121,43,0.4)"}` : "none" }}
+          style={{ boxShadow: value > 60 ? "0 0 10px rgba(239,68,68,0.4)" : "none" }}
         />
       </div>
       <AnimatePresence>

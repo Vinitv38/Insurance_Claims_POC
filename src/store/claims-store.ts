@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import {
   fetchAllClaims,
+  fetchClaimById,
   fetchSkillSets,
   fetchFatalOverrides,
   insertClaim,
@@ -143,6 +144,7 @@ interface ClaimsState {
   isInitialized: boolean;
 
   initializeFromSupabase: () => Promise<void>;
+  refreshCase: (id: string) => Promise<void>;
   selectCase: (id: string) => void;
   setVectorWeights: (weights: { clinical: number; documentation: number; discrepancy: number; behavioral: number }) => void;
   addSkillSet: (skillSet: SkillSet) => void;
@@ -155,7 +157,7 @@ interface ClaimsState {
   setActiveDocument: (id: string | null) => void;
   setHighlightedCitation: (citation: string | null) => void;
   resetDropPhase: () => void;
-  addCase: (newCase: ClaimCase) => void;
+  addCase: (newCase: ClaimCase) => Promise<void>;
 }
 
 /* ===== HARGROVE DOCUMENTS ===== */
@@ -330,6 +332,12 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
     }
   },
 
+  refreshCase: async (id) => {
+    const fresh = await fetchClaimById(id);
+    if (!fresh) throw new Error(`Claim ${id} not found in Supabase`);
+    set((state) => ({ cases: state.cases.map((c) => (c.id === id ? fresh : c)) }));
+  },
+
   selectCase: (id) => set({ selectedCaseId: id }),
 
   setVectorWeights: (weights) => set({ vectorWeights: weights }),
@@ -465,12 +473,10 @@ export const useClaimsStore = create<ClaimsState>((set, get) => ({
     }
   },
 
-  addCase: (newCase) => {
+  addCase: async (newCase) => {
+    await insertClaim(newCase);
     set((state) => ({
       cases: [newCase, ...state.cases],
     }));
-    insertClaim(newCase).catch((err) =>
-      console.warn("[ClaimsStore] Failed to sync new claim to Supabase:", err)
-    );
   },
 }));

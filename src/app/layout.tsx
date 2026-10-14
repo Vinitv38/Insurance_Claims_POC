@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "sonner";
 import Sidebar from "@/components/layout/Sidebar";
 import { SupabaseInitializer } from "@/components/providers/SupabaseInitializer";
 
@@ -21,6 +22,7 @@ export default function RootLayout({
           <main className="ml-0 lg:ml-64 min-h-screen pt-14 lg:pt-0">
             {children}
           </main>
+          <Toaster position="top-right" richColors closeButton />
         </SupabaseInitializer>
       </body>
     </html>

@@ -171,7 +171,8 @@ export async function fetchAllClaims(): Promise<ClaimCase[]> {
       .from("assessments")
       .select("*")
       .in("claim_id", claimIds)
-      .order("assessment_date", { ascending: true }),
+      .order("assessment_date", { ascending: true })
+      .order("created_at", { ascending: true }),
   ]);
 
   if (docsResult.error) throw docsResult.error;
@@ -235,7 +236,8 @@ export async function fetchClaimById(id: string): Promise<ClaimCase | null> {
     .from("assessments")
     .select("*")
     .eq("claim_id", id)
-    .order("assessment_date", { ascending: true });
+    .order("assessment_date", { ascending: true })
+      .order("created_at", { ascending: true });
 
   const docs = (docsResult.data || []).map((r) => dbRowToDocument(r as Record<string, unknown>));
   const audit = (auditResult.data || []).map((r) => dbRowToAuditEntry(r as Record<string, unknown>));
@@ -265,6 +267,16 @@ export async function fetchFatalOverrides(): Promise<FatalOverride[]> {
 }
 
 /* ===== MUTATION OPERATIONS ===== */
+
+export async function nextClaimId(): Promise<string> {
+  const { data, error } = await supabase.from("claims").select("id");
+  if (error) throw error;
+  const max = (data || []).reduce((m: number, row: { id: string }) => {
+    const n = /^claim-(\d+)$/.exec(row.id)?.[1];
+    return n ? Math.max(m, parseInt(n, 10)) : m;
+  }, 0);
+  return `claim-${String(max + 1).padStart(3, "0")}`;
+}
 
 export async function insertClaim(claim: ClaimCase): Promise<ClaimCase> {
   const { error: claimError } = await supabase.from("claims").insert({
